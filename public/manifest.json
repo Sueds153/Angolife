@@ -1,0 +1,21 @@
+{
+    "name": "AngoLife Luxury Edition",
+    "short_name": "AngoLife",
+    "description": "Liderança e transparência no mercado angolano. A sua fonte definitiva para economia e negócios.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#050505",
+    "theme_color": "#D4AF37",
+    "icons": [
+        {
+            "src": "/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

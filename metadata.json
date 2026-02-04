@@ -1,0 +1,8 @@
+
+{
+  "name": "AngoLife - Luxury Edition",
+  "description": "A premium Angolan platform for real-time exchange rates, elite job opportunities, and community-driven marketplace promotions.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
