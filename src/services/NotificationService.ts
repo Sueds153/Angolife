@@ -3,9 +3,14 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 
 export const NotificationService = {
   requestPermission: async (): Promise<boolean> => {
-    const pushPerm = await (PushNotifications as any).requestPermissions();
-    const localPerm = await (LocalNotifications as any).requestPermissions();
-    return pushPerm.display === 'granted' && localPerm.display === 'granted';
+    try {
+      const pushPerm = await PushNotifications.requestPermissions();
+      const localPerm = await LocalNotifications.requestPermissions();
+      return pushPerm.display === 'granted' && localPerm.display === 'granted';
+    } catch (err) {
+      console.error('Error requesting notification permissions:', err);
+      return false;
+    }
   },
 
   sendNotification: async (title: string, body?: string) => {
@@ -29,11 +34,11 @@ export const NotificationService = {
   },
 
   registerPush: async () => {
-    await PushNotifications.addListener('registration', (token: { value: string }) => {
+    await PushNotifications.addListener('registration', (token) => {
       console.log('Push registration success, token: ' + token.value);
     });
 
-    await PushNotifications.addListener('registrationError', (error: any) => {
+    await PushNotifications.addListener('registrationError', (error) => {
       console.error('Error on registration: ' + JSON.stringify(error));
     });
 

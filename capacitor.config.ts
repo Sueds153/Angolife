@@ -4,9 +4,13 @@ const config: CapacitorConfig = {
     appId: 'com.angolife.app',
     appName: 'AngoLife',
     webDir: 'dist',
-    bundledWebRuntime: false,
     server: {
-        androidScheme: 'https'
+        androidScheme: 'https',
+        cleartext: true,
+        allowNavigation: [
+            'open.er-api.com',
+            '*.supabase.co'
+        ]
     }
 };
 
