@@ -3,27 +3,66 @@ import { ExchangeRate } from '../types';
 import { BannerCard } from '../components/BannerCard';
 import { useToast } from '../context/ToastContext';
 import { NotificationService } from '../services/NotificationService';
+import { RewardedAd } from '../components/ads/RewardedAd';
+import { PublicityService } from '../services/PublicityService';
+import { useAuth } from '../context/AuthContext';
 
 interface ExchangeProps {
   rates: ExchangeRate[];
 }
 
 export const Exchange: React.FC<ExchangeProps> = ({ rates }) => {
+  const { user } = useAuth();
   const [amount, setAmount] = useState<string>('1');
   const [selectedCurrency, setSelectedCurrency] = useState<string>(rates[0]?.currency || 'USD');
   const [insight, setInsight] = useState<string>("Processando análise de mercado em tempo real...");
+  const [showRewarded, setShowRewarded] = useState(false);
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [pendingAlert, setPendingAlert] = useState(false);
   const { addToast } = useToast();
 
+  const handleUnlockInsight = () => {
+    const check = PublicityService.canShowRewarded();
+    if (!check.can) {
+      addToast(check.reason || 'Anúncio indisponível no momento.', 'info');
+      return;
+    }
+    setPendingAlert(false); // Mode: Insight
+    setShowRewarded(true);
+  };
+
   const handleCreateAlert = async () => {
+    const check = PublicityService.canShowRewarded();
+    if (!check.can) {
+      addToast(check.reason || 'Aguarde o intervalo entre anúncios.', 'info');
+      return;
+    }
+    setPendingAlert(true);
+    setShowRewarded(true);
+  };
+
+  const executeCreateAlert = async () => {
     const granted = await NotificationService.requestPermission();
     if (granted) {
-      addToast('Notificações ativadas! Você receberá alertas de câmbio.', 'success');
-      NotificationService.sendNotification('Monitor de Câmbio Ativo', {
-        body: 'Você será notificado quando o Dólar baixar.'
-      });
+      addToast('Alerta de Câmbio Ativado! 🎉', 'success');
+      NotificationService.sendNotification(
+        'Monitor de Câmbio Ativo', 
+        'Parabéns! Você será notificado quando as taxas mudarem.'
+      );
     } else {
-      addToast('Precisamos da sua permissão para enviar alertas.', 'error');
+      addToast('Precisamos de permissão para enviar alertas.', 'error');
     }
+  };
+
+  const handleRewardEarned = () => {
+    if (pendingAlert) {
+        executeCreateAlert();
+        setPendingAlert(false);
+    } else {
+        setIsUnlocked(true);
+        addToast('Análise Completa Desbloqueada!', 'success');
+    }
+    PublicityService.recordRewardedShown();
   };
 
   useEffect(() => {
@@ -100,30 +139,46 @@ export const Exchange: React.FC<ExchangeProps> = ({ rates }) => {
               </div>
 
               {/* RESULTS GRID */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                {/* Formal Result */}
-                <div className="p-6 rounded-2xl bg-white/5 border border-white/5 flex flex-col gap-1 group hover:border-gold-primary/20 transition-all">
-                  <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest">Valor Formal (BNA)</span>
-                  <div className="flex items-end gap-2">
-                    <span className="text-3xl font-black text-gray-900 dark:text-white">{formalResult.toLocaleString('pt-AO', { minimumFractionDigits: 2 })}</span>
-                    <span className="text-sm text-gold-primary font-bold mb-1">AOA</span>
+              <div className="relative">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                  {/* Formal Result */}
+                  <div className="p-6 rounded-2xl bg-white/5 border border-white/5 flex flex-col gap-1 group hover:border-gold-primary/20 transition-all">
+                    <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest">Valor Formal (BNA)</span>
+                    <div className="flex items-end gap-2">
+                      <span className="text-3xl font-black text-gray-900 dark:text-white">{formalResult.toLocaleString('pt-AO', { minimumFractionDigits: 2 })}</span>
+                      <span className="text-sm text-gold-primary font-bold mb-1">AOA</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-2 text-[10px] font-bold text-green-500 uppercase">
+                      <span className="material-symbols-outlined text-xs">verified</span> Taxa Oficial
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5 mt-2 text-[10px] font-bold text-green-500 uppercase">
-                    <span className="material-symbols-outlined text-xs">verified</span> Taxa Oficial
+
+                  {/* Informal Result */}
+                  <div className="p-6 rounded-2xl bg-gold-primary/5 border border-gold-primary/20 flex flex-col gap-1 group hover:border-gold-primary/40 transition-all">
+                    <span className="text-[10px] text-gold-primary uppercase font-black tracking-widest">Valor Informal (Kinguila)</span>
+                    <div className="flex items-end gap-2">
+                      <span className="text-3xl font-black text-gray-900 dark:text-white">{informalResult.toLocaleString('pt-AO', { minimumFractionDigits: 2 })}</span>
+                      <span className="text-sm text-gold-primary font-bold mb-1">AOA</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-2 text-[10px] font-bold text-gold-primary uppercase tracking-tighter">
+                      <span className="material-symbols-outlined text-xs">show_chart</span> Câmbio de Rua
+                    </div>
                   </div>
                 </div>
 
-                {/* Informal Result */}
-                <div className="p-6 rounded-2xl bg-gold-primary/5 border border-gold-primary/20 flex flex-col gap-1 group hover:border-gold-primary/40 transition-all">
-                  <span className="text-[10px] text-gold-primary uppercase font-black tracking-widest">Valor Informal (Kinguila)</span>
-                  <div className="flex items-end gap-2">
-                    <span className="text-3xl font-black text-gray-900 dark:text-white">{informalResult.toLocaleString('pt-AO', { minimumFractionDigits: 2 })}</span>
-                    <span className="text-sm text-gold-primary font-bold mb-1">AOA</span>
+                {!user && (
+                  <div className="absolute inset-0 z-20 backdrop-blur-md bg-black/40 rounded-2xl flex flex-col items-center justify-center p-6 text-center border border-gold-primary/20 animate-in fade-in zoom-in-95 duration-500">
+                    <span className="material-symbols-outlined text-gold-primary text-4xl mb-3">lock</span>
+                    <h4 className="text-sm font-black text-white uppercase tracking-widest mb-2">Acesso Exclusivo</h4>
+                    <p className="text-[10px] text-gray-300 mb-4 max-w-[200px]">Crie uma conta gratuita para converter valores e activar alertas reais.</p>
+                    <button 
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-auth', { detail: 'register' }))}
+                      className="px-6 py-2.5 bg-gold-gradient text-background-dark text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg shadow-gold-primary/20 hover:scale-105 transition-transform"
+                    >
+                      Cadastrar Grátis
+                    </button>
                   </div>
-                  <div className="flex items-center gap-1.5 mt-2 text-[10px] font-bold text-gold-primary uppercase tracking-tighter">
-                    <span className="material-symbols-outlined text-xs">show_chart</span> Câmbio de Rua
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
@@ -156,9 +211,15 @@ export const Exchange: React.FC<ExchangeProps> = ({ rates }) => {
                       <span className="text-[10px] text-gold-primary font-black uppercase tracking-widest">Informal</span>
                       <span className="text-xl font-black text-gray-900 dark:text-white">{rate.informal.toLocaleString('pt-AO')} <span className="text-[10px] font-normal text-gold-primary">AOA</span></span>
                     </div>
-                    <div className="col-span-2 pt-4 border-t border-white/5 flex justify-between items-center">
-                      <span className="text-[10px] text-gray-600 font-bold">Variação: {rate.change}</span>
-                      <span className="px-2 py-0.5 rounded bg-white/5 text-[9px] text-gray-400 font-black uppercase tracking-widest">Spread: {((rate.informal / rate.formal - 1) * 100).toFixed(1)}%</span>
+                    <div className="col-span-2 pt-4 border-t border-white/5 flex flex-col gap-2">
+                      <div className="flex justify-between items-center text-[9px]">
+                        <span className="text-gray-600 font-bold uppercase tracking-widest">Fonte: {rate.source?.replace('https://', '') || 'API Integrada'}</span>
+                        <span className="text-gold-primary/60">{rate.lastUpdated ? new Date(rate.lastUpdated).toLocaleTimeString() : '--:--'}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] text-gray-600 font-bold">Variação: {rate.change}</span>
+                        <span className="px-2 py-0.5 rounded bg-white/5 text-[9px] text-gray-400 font-black uppercase tracking-widest">Spread: {((rate.informal / rate.formal - 1) * 100).toFixed(1)}%</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -178,9 +239,29 @@ export const Exchange: React.FC<ExchangeProps> = ({ rates }) => {
               <span className="material-symbols-outlined text-gold-primary animate-pulse">auto_awesome</span>
               <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em]">PULSO DO MERCADO AI</h3>
             </div>
-            <p className="text-sm text-gray-400 leading-relaxed italic border-l-2 border-gold-primary pl-4 py-1 mb-8">
-              "{insight}"
-            </p>
+            
+            {!isUnlocked ? (
+              <div className="flex flex-col gap-4 items-center justify-center py-6 bg-black/20 rounded-xl border border-white/5 text-center px-4">
+                <span className="material-symbols-outlined text-gold-primary/40 text-4xl mb-2">lock</span>
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-4">Análise Premium Bloqueada</p>
+                <button 
+                  onClick={handleUnlockInsight}
+                  className="w-full py-3 bg-gold-gradient text-background-dark font-black rounded-xl text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-gold-primary/20"
+                >
+                  🔓 Ver Análise Completa
+                </button>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400 leading-relaxed italic border-l-2 border-gold-primary pl-4 py-1 mb-8 animate-in fade-in duration-700">
+                "{insight}"
+              </p>
+            )}
+
+            <RewardedAd 
+              isOpen={showRewarded}
+              onClose={() => setShowRewarded(false)}
+              onReward={handleRewardEarned}
+            />
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between text-[10px] font-black text-gray-500 uppercase">
                 <span>Pressão Informal</span>

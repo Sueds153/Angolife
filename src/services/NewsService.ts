@@ -57,5 +57,46 @@ export const NewsService = {
       return false;
     }
     return true;
+  },
+
+  syncRealNews: async (): Promise<number> => {
+    console.log('Iniciando sincronização de notícias reais...');
+    let count = 0;
+    
+    // Lista de fontes de notícias angolanas indexáveis
+    const NEWS_SOURCES = [
+      { name: 'Economia & Mercado', url: 'https://www.economiaemercado.co.ao' },
+      { name: 'Jornal de Angola', url: 'https://www.jornaldeangola.ao' }
+    ];
+
+    for (const source of NEWS_SOURCES) {
+      try {
+        const { data, error } = await supabase.functions.invoke('ai-scraper', {
+          body: { url: source.url, type: 'news' }
+        });
+
+        if (error || !data) continue;
+
+        const items = Array.isArray(data) ? data : [];
+        for (const item of items) {
+          const { error: dbError } = await supabase
+            .from('news')
+            .upsert({
+              title: item.title,
+              description: item.description || item.content?.substring(0, 150),
+              content: item.content || item.description,
+              image_url: item.image_url || 'https://placehold.co/800x400?text=AngoLife+News',
+              category: 'Economia',
+              status: 'published',
+              created_at: new Date().toISOString()
+            }, { onConflict: 'title' });
+          
+          if (!dbError) count++;
+        }
+      } catch (err) {
+        console.error(`Erro ao sincronizar notícias de ${source.name}:`, err);
+      }
+    }
+    return count;
   }
 };

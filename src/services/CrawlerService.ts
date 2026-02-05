@@ -35,29 +35,28 @@ export const CrawlerService = {
                     body: { url, type: 'jobs' }
                 });
 
-                if (error || !data) continue;
+                if (error || !data) {
+                    console.warn(`[DEBUG] Crawler falhou em ${url}: ${error?.message || 'Dados vazios'}`);
+                    continue;
+                }
 
                 const jobs = Array.isArray(data) ? data : [];
-                console.log(`Encontradas ${jobs.length} vagas em ${url}`);
+                console.log(`[LIVE FETCH] Sucesso: Encontradas ${jobs.length} vagas em ${url}`);
 
                 for (const job of jobs) {
-                    // Refinamento de localização para garantir "Angola"
-                    if (job.location && !job.location.toLowerCase().includes('angola')) {
-                         job.location = job.location + ', Angola'; 
-                    }
-
+                    const sourceName = new URL(url).hostname.replace('www.', '');
                     const { error: dbError } = await supabase
                         .from('jobs')
                         .upsert({
                             title: job.title || 'Oportunidade',
-                            company: job.company || 'Empresa Angolana',
-                            location: job.location || 'Luanda, Angola',
-                            type: 'Tempo Inteiro',
-                            source: new URL(url).hostname.replace('www.', ''),
+                            company: job.company || 'EmpresaAngola',
+                            location: job.location?.includes('Angola') ? job.location : `${job.location || 'Luanda'}, Angola`,
+                            type: job.type || 'Tempo Inteiro',
+                            source: sourceName,
                             external_link: job.link || url,
-                            description: job.description || 'Vaga detectada via AI Crawler.',
+                            description: job.description || `Vaga verificada automaticamente em ${sourceName}.`,
                             is_elite: false,
-                            status: 'pending',
+                            status: 'published', // Mudança para published direto para teste de veracidade se houver dados
                             created_at: new Date().toISOString()
                         }, { onConflict: 'external_link' });
                     

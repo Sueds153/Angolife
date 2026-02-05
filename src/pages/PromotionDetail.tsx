@@ -1,16 +1,80 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Promotion } from '../types';
 import { BannerCard } from '../components/BannerCard';
+import { PromotionService } from '../services/PromotionService';
+import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
 
-interface PromotionDetailProps {
-  promotions: Promotion[];
-}
-
-export const PromotionDetail: React.FC<PromotionDetailProps> = ({ promotions }) => {
+export const PromotionDetail: React.FC = () => {
   const { id } = useParams();
-  const promo = promotions.find(p => p.id === id);
+  const { user } = useAuth();
+  const { addToast } = useToast();
+  const [promo, setPromo] = useState<Promotion | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [chatMessage, setChatMessage] = useState('');
+  const [messages, setMessages] = useState([
+    { name: 'António L.', text: 'Confirmado! Estive lá ontem e o preço é real. Atendimento premium.', color: 'bg-gold-primary/20' },
+    { name: 'Sílvia M.', text: 'Ainda têm stock do Titanium?', color: 'bg-blue-500/20' }
+  ]);
+
+  const handleContact = () => {
+    if (!promo) return;
+    const contact = promo.userContact || '923000000'; // Fallback
+    const cleanContact = contact.replace(/\s/g, '');
+    window.open(`https://wa.me/${cleanContact.startsWith('+') ? cleanContact.substring(1) : cleanContact}`, '_blank');
+    addToast('A abrir WhatsApp...', 'info');
+  };
+
+  const handleShare = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: promo?.productName,
+          text: `Olha este desconto no AngoLife: ${promo?.productName} por ${promo?.price} na loja ${promo?.store}!`,
+          url: window.location.href,
+        });
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        addToast('Link copiado para a área de transferência!', 'success');
+      }
+    } catch (err) {
+      console.error('Error sharing:', err);
+    }
+  };
+
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatMessage.trim()) return;
+    
+    const newUserMessage = {
+      name: user?.user_metadata?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Eu',
+      text: chatMessage,
+      color: 'bg-gold-primary/30'
+    };
+
+    setMessages([...messages, newUserMessage]);
+    setChatMessage('');
+    addToast('Mensagem enviada!', 'success');
+  };
+
+  useEffect(() => {
+    const loadPromo = async () => {
+        if (!id) return;
+        setLoading(true);
+        const fetchedPromo = await PromotionService.getPromotionById(id);
+        setPromo(fetchedPromo);
+        setLoading(false);
+    };
+    loadPromo();
+  }, [id]);
+
+  if (loading) return (
+      <div className="flex justify-center items-center py-20 text-gold-primary">
+        <span className="material-symbols-outlined animate-spin text-4xl">progress_activity</span>
+      </div>
+  );
 
   if (!promo) return (
     <div className="flex flex-col items-center justify-center py-20 text-white">
@@ -64,10 +128,16 @@ export const PromotionDetail: React.FC<PromotionDetailProps> = ({ promotions }) 
             </p>
 
             <div className="flex gap-4">
-              <button className="flex-1 py-4 bg-gold-gradient text-background-dark font-black rounded-xl uppercase tracking-widest shadow-xl shadow-gold-primary/20">
+              <button 
+                onClick={handleContact}
+                className="flex-1 py-4 bg-gold-gradient text-background-dark font-black rounded-xl uppercase tracking-widest shadow-xl shadow-gold-primary/20 hover:scale-[1.02] transition-transform"
+              >
                 Contactar Loja
               </button>
-              <button className="flex items-center justify-center size-14 border border-border-gold rounded-xl text-white hover:text-gold-primary transition-colors">
+              <button 
+                onClick={handleShare}
+                className="flex items-center justify-center size-14 border border-border-gold rounded-xl text-white hover:text-gold-primary transition-colors"
+              >
                 <span className="material-symbols-outlined">share</span>
               </button>
             </div>
@@ -81,30 +151,27 @@ export const PromotionDetail: React.FC<PromotionDetailProps> = ({ promotions }) 
             <span className="material-symbols-outlined text-gold-primary">forum</span> Conversa sobre o Preço
           </h4>
           <div className="flex flex-col gap-6 max-h-[400px] overflow-y-auto no-scrollbar mb-6">
-            <div className="flex gap-3">
-              <div className="size-8 rounded-full bg-gold-primary/20 shrink-0 border border-gold-primary/10"></div>
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] text-white font-black uppercase tracking-widest">António L.</span>
-                <p className="text-xs text-gray-400 bg-white/5 p-3 rounded-2xl rounded-tl-none">Confirmado! Estive lá ontem e o preço é real. Atendimento premium.</p>
+            {messages.map((msg, i) => (
+              <div key={i} className="flex gap-3 animate-in slide-in-from-bottom-2">
+                <div className={`size-8 rounded-full ${msg.color} shrink-0 border border-gold-primary/10`}></div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] text-white font-black uppercase tracking-widest">{msg.name}</span>
+                  <p className="text-xs text-gray-400 bg-white/5 p-3 rounded-2xl rounded-tl-none">{msg.text}</p>
+                </div>
               </div>
-            </div>
-            <div className="flex gap-3">
-              <div className="size-8 rounded-full bg-blue-500/20 shrink-0 border border-blue-500/10"></div>
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] text-white font-black uppercase tracking-widest">Sílvia M.</span>
-                <p className="text-xs text-gray-400 bg-white/5 p-3 rounded-2xl rounded-tl-none">Ainda têm stock do Titanium?</p>
-              </div>
-            </div>
+            ))}
           </div>
-          <div className="flex gap-2">
+          <form onSubmit={handleSendMessage} className="flex gap-2">
             <input 
               className="flex-1 bg-white/5 border border-border-gold rounded-xl p-3 text-xs text-white focus:ring-1 focus:ring-gold-primary outline-none"
               placeholder="Escreva algo..."
+              value={chatMessage}
+              onChange={(e) => setChatMessage(e.target.value)}
             />
-            <button className="size-11 bg-gold-gradient text-background-dark rounded-xl flex items-center justify-center shadow-lg">
+            <button type="submit" className="size-11 bg-gold-gradient text-background-dark rounded-xl flex items-center justify-center shadow-lg">
               <span className="material-symbols-outlined">send</span>
             </button>
-          </div>
+          </form>
         </div>
         <BannerCard type="banner" />
       </aside>

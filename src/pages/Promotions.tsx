@@ -1,18 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Promotion, PromotionCategory } from '../types';
 import { BannerCard } from '../components/BannerCard';
 import { PromotionService } from '../services/PromotionService';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
+import { AuthOverlay } from '../components/AuthOverlay';
+import { useFavorites } from '../context/FavoritesContext';
 
-interface PromotionsProps {
-  promotions: Promotion[];
-}
+export const Promotions: React.FC = () => {
+  const { user } = useAuth();
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
-export const Promotions: React.FC<PromotionsProps> = ({ promotions }) => {
   const [showForm, setShowForm] = useState(false);
+  const [showAuth, setShowAuth] = useState<'login' | 'register' | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<PromotionCategory | 'All'>('All');
+  
   const [newPromo, setNewPromo] = useState({
     productName: '',
     price: '',
@@ -23,6 +30,55 @@ export const Promotions: React.FC<PromotionsProps> = ({ promotions }) => {
     category: 'Other' as PromotionCategory
   });
   const { addToast } = useToast();
+  const { isFavorite, addFavorite, removeFavorite } = useFavorites();
+
+  const toggleFavorite = (promo: Promotion) => {
+    if (isFavorite(promo.id)) {
+      removeFavorite(promo.id);
+      addToast('Removido dos favoritos', 'info');
+    } else {
+      addFavorite({
+        id: promo.id,
+        type: 'promotion',
+        title: promo.productName,
+        image: promo.image,
+        companyOrDate: promo.store
+      });
+      addToast('Guardado nos favoritos!', 'success');
+    }
+  };
+
+  useEffect(() => {
+    loadPromotions(1);
+  }, []);
+
+  const loadPromotions = async (pageNum: number) => {
+    setLoading(true);
+    const newPromos = await PromotionService.fetchPromotions(pageNum, 10);
+    
+    if (newPromos.length < 10) setHasMore(false);
+
+    if (pageNum === 1) {
+      setPromotions(newPromos);
+    } else {
+      setPromotions(prev => [...prev, ...newPromos]);
+    }
+    setLoading(false);
+  };
+  
+  const handleLoadMore = () => {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      loadPromotions(nextPage);
+  };
+
+  const handleShareClick = () => {
+    if (!user) {
+      setShowAuth('login');
+      return;
+    }
+    setShowForm(!showForm);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +89,8 @@ export const Promotions: React.FC<PromotionsProps> = ({ promotions }) => {
       const { error } = await PromotionService.addPromotion({
         ...newPromo,
         image: 'https://picsum.photos/seed/' + Math.random() + '/400/400',
-        isVerified: false
+        isVerified: false,
+        submittedBy: user?.id
       });
 
       if (error) throw error;
@@ -56,12 +113,14 @@ export const Promotions: React.FC<PromotionsProps> = ({ promotions }) => {
           <p className="text-gray-500 text-lg">Partilhe e encontre os melhores preços de Angola.</p>
         </div>
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={handleShareClick}
           className="bg-gold-gradient text-background-dark font-black px-8 py-3 rounded-full text-sm uppercase tracking-widest shadow-xl shadow-gold-primary/20 hover:scale-105 transition-transform"
         >
           {showForm ? 'Cancelar' : 'Partilhar Desconto'}
         </button>
       </div>
+
+      {showAuth && <AuthOverlay mode={showAuth} onClose={() => setShowAuth(null)} />}
 
       {showForm && (
         <section className="bg-surface-dark border border-gold-primary/30 rounded-3xl p-8 max-w-2xl mx-auto w-full animate-in fade-in slide-in-from-top-4 duration-300">
@@ -172,10 +231,16 @@ export const Promotions: React.FC<PromotionsProps> = ({ promotions }) => {
                 <div className="absolute inset-0 bg-gold-primary/0 group-hover:bg-gold-primary/10 transition-all"></div>
                 <div className="absolute top-4 right-4">
                   <button
-                    onClick={(e) => { e.preventDefault(); /* Like logic */ }}
-                    className="size-10 rounded-full glass-card flex items-center justify-center text-gray-900 dark:text-white hover:text-gold-primary transition-colors"
+                    onClick={(e) => { 
+                      e.preventDefault(); 
+                      e.stopPropagation();
+                      toggleFavorite(promo);
+                    }}
+                    className={`size-10 rounded-full glass-card flex items-center justify-center transition-all ${isFavorite(promo.id) ? 'bg-gold-primary text-black' : 'text-gray-900 dark:text-white hover:text-gold-primary'}`}
                   >
-                    <span className="material-symbols-outlined">favorite</span>
+                    <span className={`material-symbols-outlined ${isFavorite(promo.id) ? 'fill-current' : ''}`}>
+                      {isFavorite(promo.id) ? 'favorite' : 'favorite_border'}
+                    </span>
                   </button>
                 </div>
                 {promo.isVerified && (
@@ -206,6 +271,22 @@ export const Promotions: React.FC<PromotionsProps> = ({ promotions }) => {
             </div>
           ))}
       </div>
+
+       {hasMore && !loading && (
+        <div className="flex justify-center mt-4">
+          <button 
+            onClick={handleLoadMore}
+            className="bg-gold-gradient text-background-dark font-black px-8 py-3 rounded-full text-sm uppercase tracking-widest shadow-xl shadow-gold-primary/20 hover:scale-105 transition-transform"
+          >
+            Carregar Mais Descontos
+          </button>
+        </div>
+      )}
+      {loading && (
+            <div className="flex justify-center mt-8 text-gold-primary">
+            <span className="material-symbols-outlined animate-spin text-4xl">progress_activity</span>
+            </div>
+      )}
 
       <BannerCard type="banner" />
     </div>

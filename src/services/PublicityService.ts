@@ -35,18 +35,63 @@ export const PublicityService = {
     await supabase.rpc('increment_ad_click', { ad_id: id });
   },
 
-  // Check if an interstitial should be shown (e.g. based on frequency capping)
+  // --- FREQUENCY CAPPING LOGIC ---
+
+  // Interstitials: 1 every 2-3 mins, max 3-4 per session
   shouldShowInterstitial: (): boolean => {
-    // Simple logic: 30% chance for demo purposes, or check a timestamp in localStorage
-    const lastShown = localStorage.getItem('last_interstitial');
+    const sessionCount = parseInt(sessionStorage.getItem('ad_session_interstitial_count') || '0');
+    if (sessionCount >= 4) return false; // Max 4 per session
+
+    const lastShown = localStorage.getItem('last_interstitial_time');
     if (lastShown) {
       const diff = Date.now() - parseInt(lastShown);
-      if (diff < 1000 * 60 * 5) return false; // Cooldown 5 mins
+      const interval = 1000 * 60 * 2.5; // 2.5 minutes average
+      if (diff < interval) return false;
     }
-    return Math.random() < 0.3; // 30% chance navigate
+
+    return true;
   },
 
   recordInterstitialShown: () => {
-    localStorage.setItem('last_interstitial', Date.now().toString());
+    localStorage.setItem('last_interstitial_time', Date.now().toString());
+    const sessionCount = parseInt(sessionStorage.getItem('ad_session_interstitial_count') || '0');
+    sessionStorage.setItem('ad_session_interstitial_count', (sessionCount + 1).toString());
+  },
+
+  // Rewarded: Max 4/day, interval min 9 mins
+  canShowRewarded: (): { can: boolean; reason?: string } => {
+    const today = new Date().toDateString();
+    const dailyData = JSON.parse(localStorage.getItem('ad_rewarded_daily_limit') || '{"date": "", "count": 0}');
+    
+    if (dailyData.date === today && dailyData.count >= 4) {
+      return { can: false, reason: 'Limite diário de recompensas atingido (4/dia).' };
+    }
+
+    const lastShown = localStorage.getItem('last_rewarded_time');
+    if (lastShown) {
+      const diff = Date.now() - parseInt(lastShown);
+      const minInterval = 1000 * 60 * 9; // 9 minutes
+      if (diff < minInterval) {
+        const remaining = Math.ceil((minInterval - diff) / 1000 / 60);
+        return { can: false, reason: `Próxima recompensa disponível em ${remaining} min.` };
+      }
+    }
+
+    return { can: true };
+  },
+
+  recordRewardedShown: () => {
+    localStorage.setItem('last_rewarded_time', Date.now().toString());
+    
+    const today = new Date().toDateString();
+    let dailyData = JSON.parse(localStorage.getItem('ad_rewarded_daily_limit') || '{"date": "", "count": 0}');
+    
+    if (dailyData.date !== today) {
+      dailyData = { date: today, count: 1 };
+    } else {
+      dailyData.count += 1;
+    }
+    
+    localStorage.setItem('ad_rewarded_daily_limit', JSON.stringify(dailyData));
   }
 };

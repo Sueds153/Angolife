@@ -1,16 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { NewsService } from '../services/NewsService';
 import { NewsItem } from '../types';
+import { useToast } from '../context/ToastContext';
 
 export const AdminNews: React.FC = () => {
   const [items, setItems] = useState<NewsItem[]>([]);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    image_url: ''
+    content: '',
+    image_url: '',
+    status: 'published' as 'draft' | 'published',
+    category: 'Economia'
   });
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const { addToast } = useToast();
 
   useEffect(() => {
     loadItems();
@@ -31,15 +36,25 @@ export const AdminNews: React.FC = () => {
     const newItem = await NewsService.addNews({
       title: formData.title,
       description: formData.description,
-      image_url: formData.image_url
+      content: formData.content,
+      image_url: formData.image_url,
+      status: formData.status,
+      category: formData.category
     });
 
     if (newItem) {
-      setFormData({ title: '', description: '', image_url: '' });
+      setFormData({ 
+        title: '', 
+        description: '', 
+        content: '', 
+        image_url: '', 
+        status: 'published', 
+        category: 'Economia' 
+      });
       loadItems();
-      alert('Notícia adicionada com sucesso!');
+      addToast('Notícia adicionada com sucesso! 🚀', 'success');
     } else {
-      alert('Erro ao adicionar notícia.');
+      addToast('Erro ao adicionar notícia. Tente novamente.', 'error');
     }
     setSubmitting(false);
   };
@@ -104,12 +119,50 @@ export const AdminNews: React.FC = () => {
                 <p className="text-[10px] text-gray-400 mt-1">Recomendado: Imagens verticais para melhor visualização.</p>
               </div>
 
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Conteúdo Completo (Notícia Completa)</label>
+                <textarea 
+                  value={formData.content}
+                  onChange={e => setFormData({...formData, content: e.target.value})}
+                  className="w-full bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gold-primary transition-colors text-gray-900 dark:text-white h-48"
+                  placeholder="Escreva aqui a notícia completa..."
+                  required
+                />
+              </div>
+
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Categoria</label>
+                  <select 
+                    value={formData.category}
+                    onChange={e => setFormData({...formData, category: e.target.value})}
+                    className="w-full bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gold-primary transition-colors text-gray-900 dark:text-white"
+                  >
+                    <option value="Economia">Economia</option>
+                    <option value="Negócios">Negócios</option>
+                    <option value="Mercado">Mercado</option>
+                    <option value="Lifestyle">Lifestyle</option>
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Status</label>
+                  <select 
+                    value={formData.status}
+                    onChange={e => setFormData({...formData, status: e.target.value as 'draft' | 'published'})}
+                    className="w-full bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gold-primary transition-colors text-gray-900 dark:text-white"
+                  >
+                    <option value="published">Publicar Agora</option>
+                    <option value="draft">Salvar Rascunho</option>
+                  </select>
+                </div>
+              </div>
+
               <button 
                 type="submit" 
                 disabled={submitting}
-                className="mt-2 w-full bg-gold-gradient text-background-dark font-black uppercase tracking-widest py-4 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gold-primary/20"
+                className="mt-4 w-full bg-gold-gradient text-background-dark font-black uppercase tracking-widest py-4 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gold-primary/20"
               >
-                {submitting ? 'Publicando...' : 'Publicar Notícia'}
+                {submitting ? 'A processar...' : formData.status === 'published' ? '🚀 Publicar para Todos' : '💾 Salvar para Depois'}
               </button>
             </form>
           </div>

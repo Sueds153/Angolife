@@ -4,18 +4,32 @@ import { Newsletter } from '../components/Newsletter';
 import { BannerCard } from '../components/BannerCard';
 import { Link } from 'react-router-dom';
 
+import { JobService } from '../services/JobService';
+import { PromotionService } from '../services/PromotionService';
+import { useAuth } from '../context/AuthContext';
+
 interface HomeProps {
   rates: ExchangeRate[];
-  jobs: JobListing[];
-  promotions: Promotion[];
 }
 
-export const Home: React.FC<HomeProps> = ({ rates, jobs, promotions }) => {
+export const Home: React.FC<HomeProps> = ({ rates }) => {
+  const { user } = useAuth();
   const [insight, setInsight] = useState<string>("Processando análise de mercado...");
+  const [jobs, setJobs] = useState<JobListing[]>([]);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
 
   useEffect(() => {
     // Mocking gemini service if removed
     setInsight("Mercado favorável para investimento em moeda estrangeira.");
+
+    const loadData = async () => {
+        const latestJobs = await JobService.getLatestJobs(3);
+        setJobs(latestJobs);
+
+        const latestPromotions = await PromotionService.getLatestPromotions(2);
+        setPromotions(latestPromotions);
+    };
+    loadData();
   }, [rates]);
 
   return (
@@ -41,6 +55,20 @@ export const Home: React.FC<HomeProps> = ({ rates, jobs, promotions }) => {
               <p className="text-sm font-medium">Descontos Banda</p>
             </Link>
           </div>
+
+          {!user && (
+            <div className="mt-4 p-5 rounded-2xl bg-gold-gradient text-background-dark shadow-xl shadow-gold-primary/20 animate-in slide-in-from-left-5 duration-500">
+              <h4 className="text-sm font-black uppercase tracking-tight mb-2">Seja VIP no AngoLife</h4>
+              <p className="text-[10px] font-bold opacity-80 mb-4 leading-tight">Aceda a contactos directos de RH, promoções exclusivas e ferramentas de câmbio avançadas.</p>
+              <button 
+                onClick={() => window.dispatchEvent(new CustomEvent('open-auth', { detail: 'register' }))}
+                className="w-full py-2 bg-background-dark text-gold-primary text-[10px] font-black uppercase tracking-widest rounded-lg hover:scale-105 transition-transform"
+              >
+                Cadastrar Agora
+              </button>
+            </div>
+          )}
+
           <BannerCard type="sidebar" className="mt-8" />
         </div>
       </aside>

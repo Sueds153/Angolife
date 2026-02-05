@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 // Interfaces for what we store
 interface FavoriteItem {
     id: string;
-    type: 'job' | 'news';
+    type: 'job' | 'news' | 'promotion';
     title: string;
     image?: string;
     companyOrDate?: string; // Company for jobs, Date for news

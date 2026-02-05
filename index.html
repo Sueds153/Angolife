@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="AngoLife">
-    <link rel="apple-touch-icon" href="/icon-192x192.png">
+    <link rel="apple-touch-icon" href="/app-icon.png">
 
     <!-- Resource Preconnect -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -29,6 +29,13 @@
 <body class="bg-background-dark text-white selection:bg-gold-primary selection:text-black">
     <div id="root"></div>
     <script type="module" src="/src/index.tsx"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js');
+            });
+        }
+    </script>
 </body>
 
 </html>

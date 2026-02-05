@@ -4,7 +4,8 @@ export interface ExchangeRate {
   informal: number;
   trend: 'up' | 'down' | 'stable';
   change: string;
-  lastUpdated?: string; // New: track updates
+  lastUpdated?: string;
+  source?: string;
 }
 
 export interface ExchangeHistoryPoint {
@@ -63,9 +64,10 @@ export interface NewsItem {
   id: string;
   title: string;
   subtitle?: string;
-  description?: string; // Used in NewsDetail as 'description'. In some contexts might be 'content'
+  description?: string;
   content?: string;
   image_url?: string;
   created_at?: string;
   category?: string;
+  status?: 'draft' | 'published';
 }

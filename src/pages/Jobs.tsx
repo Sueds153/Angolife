@@ -1,19 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { JobListing } from '../types';
 import { BannerCard } from '../components/BannerCard';
 import { useFavorites } from '../context/FavoritesContext';
 import { useToast } from '../context/ToastContext';
 
-interface JobsProps {
-  jobs: JobListing[];
-}
+import { JobService } from '../services/JobService';
 
-export const Jobs: React.FC<JobsProps> = ({ jobs }) => {
+export const Jobs: React.FC = () => {
+  const [jobs, setJobs] = useState<JobListing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [minSalary, setMinSalary] = useState(0);
+  const [onlyElite, setOnlyElite] = useState(false);
+  const [onlyRemote, setOnlyRemote] = useState(false);
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
   const { addToast } = useToast();
+
+  useEffect(() => {
+    loadJobs(1);
+  }, []);
+
+  const loadJobs = async (pageNum: number) => {
+    setLoading(true);
+    const newJobs = await JobService.fetchJobs(pageNum, 10);
+    
+    if (newJobs.length < 10) {
+      setHasMore(false);
+    }
+
+    if (pageNum === 1) {
+      setJobs(newJobs);
+    } else {
+      setJobs(prev => [...prev, ...newJobs]);
+    }
+    setLoading(false);
+  };
+
+  const handleLoadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    loadJobs(nextPage);
+  };
 
   const toggleFavorite = (job: JobListing) => {
     if (isFavorite(job.id)) {
@@ -34,11 +64,21 @@ export const Jobs: React.FC<JobsProps> = ({ jobs }) => {
   const filteredJobs = jobs.filter(j => {
     const matchesSearch = j.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       j.company.toLowerCase().includes(searchTerm.toLowerCase());
-    // Filter by salary if value present. If not present (e.g. Consultar), we show it only if minSalary is 0
+    
+    // Filter by salary
     const val = j.salaryValue || 0;
     const matchesSalary = val >= minSalary;
 
-    return matchesSearch && matchesSalary;
+    // Filter by Elite status
+    const matchesElite = !onlyElite || j.isElite;
+
+    // Filter by Remote status (checking tags or title for 'Remote' or 'Híbrido' since we don't have a remote flag in type yet)
+    const matchesRemote = !onlyRemote || 
+      j.location.toLowerCase().includes('remoto') || 
+      j.type.toLowerCase().includes('remoto') ||
+      j.title.toLowerCase().includes('remoto');
+
+    return matchesSearch && matchesSalary && matchesElite && matchesRemote;
   });
 
   return (
@@ -67,11 +107,21 @@ export const Jobs: React.FC<JobsProps> = ({ jobs }) => {
             <h3 className="text-sm font-black text-gray-900 dark:text-white mb-6 flex items-center gap-2 uppercase tracking-widest">Filtros Elite</h3>
             <div className="flex flex-col gap-4">
               <label className="flex items-center gap-3 cursor-pointer group">
-                <input type="checkbox" className="size-4 rounded border-border-gold bg-transparent text-gold-primary focus:ring-offset-background-dark" />
+                <input 
+                  type="checkbox" 
+                  checked={onlyElite}
+                  onChange={(e) => setOnlyElite(e.target.checked)}
+                  className="size-4 rounded border-border-gold bg-transparent text-gold-primary focus:ring-offset-background-dark" 
+                />
                 <span className="text-sm text-gray-600 dark:text-gray-400 group-hover:text-gold-primary">Só Vagas Elite</span>
               </label>
               <label className="flex items-center gap-3 cursor-pointer group">
-                <input type="checkbox" className="size-4 rounded border-border-gold bg-transparent text-gold-primary focus:ring-offset-background-dark" />
+                <input 
+                  type="checkbox" 
+                  checked={onlyRemote}
+                  onChange={(e) => setOnlyRemote(e.target.checked)}
+                  className="size-4 rounded border-border-gold bg-transparent text-gold-primary focus:ring-offset-background-dark" 
+                />
                 <span className="text-sm text-gray-600 dark:text-gray-400 group-hover:text-gold-primary">Trabalho Remoto</span>
               </label>
 
@@ -170,6 +220,22 @@ export const Jobs: React.FC<JobsProps> = ({ jobs }) => {
           )}
 
           <BannerCard type="banner" className="mt-8" />
+          
+          {hasMore && !loading && (
+            <div className="flex justify-center mt-8">
+              <button 
+                onClick={handleLoadMore}
+                className="bg-gold-gradient text-background-dark font-black px-8 py-3 rounded-full text-sm uppercase tracking-widest shadow-xl shadow-gold-primary/20 hover:scale-105 transition-transform"
+              >
+                Carregar Mais Vagas
+              </button>
+            </div>
+          )}
+          {loading && (
+             <div className="flex justify-center mt-8 text-gold-primary">
+                <span className="material-symbols-outlined animate-spin text-4xl">progress_activity</span>
+             </div>
+          )}
         </section>
       </div>
     </div>

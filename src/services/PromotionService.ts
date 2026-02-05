@@ -2,13 +2,17 @@ import { supabase } from '../lib/supabase';
 import { Promotion } from '../types';
 
 export const PromotionService = {
-    // Buscar todas as promoções publicadas
-    fetchPromotions: async (): Promise<Promotion[]> => {
+    // Buscar todas as promoções publicadas com paginação
+    fetchPromotions: async (page = 1, limit = 10): Promise<Promotion[]> => {
+        const from = (page - 1) * limit;
+        const to = from + limit - 1;
+
         const { data, error } = await supabase
             .from('promotions')
             .select('*')
             .eq('status', 'published')
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
+            .range(from, to);
 
         if (error) {
             console.error('Error fetching promotions:', error);
@@ -16,6 +20,24 @@ export const PromotionService = {
         }
 
         return (data || []).map(PromotionService.mapPromotion);
+    },
+
+    // Buscar últimas promoções para a Home
+    getLatestPromotions: async (limit = 2): Promise<Promotion[]> => {
+        return await PromotionService.fetchPromotions(1, limit);
+    },
+
+    // Buscar promoção por ID
+    getPromotionById: async (id: string): Promise<Promotion | null> => {
+        const { data, error } = await supabase
+            .from('promotions')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (error || !data) return null;
+
+        return PromotionService.mapPromotion(data);
     },
 
     // Buscar promoções aguardando moderação

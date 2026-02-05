@@ -6,41 +6,42 @@ import { Jobs } from './pages/Jobs';
 import { JobDetail } from './pages/JobDetail';
 import { Promotions } from './pages/Promotions';
 import { PromotionDetail } from './pages/PromotionDetail';
+import { Profile } from './pages/Profile';
 import { Admin } from './pages/Admin';
+import { AdminNews } from './pages/AdminNews';
 import { Exchange } from './pages/Exchange';
 import { AuthOverlay } from './components/AuthOverlay';
-import { ExchangeRate, JobListing, Promotion } from './types';
+import { ProtectedRoute } from './components/ProtectedRoute'; // Added
+import { ExchangeRate } from './types';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
 import { FavoritesProvider } from './context/FavoritesContext';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import { News } from '@/pages/News';
-import { NewsDetail } from '@/pages/NewsDetail';
+import { AuthProvider } from './context/AuthContext';
+import { News } from './pages/News';
+import { NewsDetail } from './pages/NewsDetail';
 import { ResetPassword } from './pages/ResetPassword';
-import { AuthService } from './services/AuthService';
 import { ExchangeService } from './services/ExchangeService';
-import { JobService } from './services/JobService';
-import { PromotionService } from './services/PromotionService';
+import { NotificationService } from './services/NotificationService';
+import { Capacitor } from '@capacitor/core';
+import { Network } from '@capacitor/network';
+import { useToast } from './context/ToastContext';
 
 const App: React.FC = () => {
   const [rates, setRates] = useState<ExchangeRate[]>([]);
-  const [jobs, setJobs] = useState<JobListing[]>([]);
-  const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [authMode, setAuthMode] = useState<'login' | 'register' | null>(null);
 
   useEffect(() => {
-    // Load initial data
+    // Load initial rates only
     const loadData = async () => {
       const loadedRates = await ExchangeService.getRates();
       setRates(loadedRates);
-
-      const loadedJobs = await JobService.fetchJobs();
-      setJobs(loadedJobs);
-
-      const loadedPromos = await PromotionService.fetchPromotions();
-      setPromotions(loadedPromos);
     };
     loadData();
+
+    // Native Initialization
+    if (Capacitor.isNativePlatform()) {
+      NotificationService.registerPush();
+    }
   }, []);
 
   const updateInformalRate = async (currency: string, newRate: number) => {
@@ -53,8 +54,6 @@ const App: React.FC = () => {
       <AuthProvider>
         <AppContent
           rates={rates}
-          jobs={jobs}
-          promotions={promotions}
           authMode={authMode}
           setAuthMode={setAuthMode}
           updateInformalRate={updateInformalRate}
@@ -66,13 +65,23 @@ const App: React.FC = () => {
 
 const AppContent: React.FC<{
   rates: ExchangeRate[];
-  jobs: JobListing[];
-  promotions: Promotion[];
   authMode: 'login' | 'register' | null;
   setAuthMode: (mode: 'login' | 'register' | null) => void;
   updateInformalRate: (curr: string, val: number) => void;
-}> = ({ rates, jobs, promotions, authMode, setAuthMode, updateInformalRate }) => {
-  const { user, loading } = useAuth();
+}> = ({ rates, authMode, setAuthMode, updateInformalRate }) => {
+  const { addToast } = useToast();
+
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      Network.addListener('networkStatusChange', status => {
+        if (!status.connected) {
+          addToast('Você está offline. O app funcionará com dados em cache.', 'info');
+        } else {
+          addToast('Conexão restabelecida. Atualizando dados...', 'success');
+        }
+      });
+    }
+  }, []);
 
   return (
     <ToastProvider>
@@ -80,21 +89,40 @@ const AppContent: React.FC<{
         <Router>
           <Layout onAuthClick={(mode) => setAuthMode(mode)}>
             <Routes>
-              <Route path="/" element={<Home rates={rates} jobs={jobs.slice(0, 3)} promotions={promotions.slice(0, 2)} />} />
+              <Route path="/" element={<Home rates={rates} />} />
               <Route path="/exchange" element={<Exchange rates={rates} />} />
-              <Route path="/jobs" element={<Jobs jobs={jobs} />} />
-              <Route path="/jobs/:id" element={<JobDetail jobs={jobs} />} />
+              <Route path="/jobs" element={<Jobs />} />
+              <Route path="/jobs/:id" element={<JobDetail />} />
               <Route path="/news" element={<News />} />
               <Route path="/news/:id" element={<NewsDetail />} />
-              <Route path="/promotions" element={<Promotions promotions={promotions} />} />
-              <Route path="/promotions/:id" element={<PromotionDetail promotions={promotions} />} />
+               <Route path="/promotions" element={
+                <ProtectedRoute>
+                  <Promotions />
+                </ProtectedRoute>
+              } />
+              <Route path="/promotions/:id" element={
+                <ProtectedRoute>
+                  <PromotionDetail />
+                </ProtectedRoute>
+              } />
               <Route path="/reset-password" element={<ResetPassword />} />
+              
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              } />
+
               <Route path="/admin" element={
-                !loading && AuthService.isAdmin(user) ? (
+                <ProtectedRoute adminOnly>
                   <Admin rates={rates} onUpdate={updateInformalRate} />
-                ) : (
-                  <Home rates={rates} jobs={jobs.slice(0, 3)} promotions={promotions.slice(0, 2)} />
-                )
+                </ProtectedRoute>
+              } />
+
+              <Route path="/admin/news" element={
+                <ProtectedRoute adminOnly>
+                  <AdminNews />
+                </ProtectedRoute>
               } />
             </Routes>
           </Layout>

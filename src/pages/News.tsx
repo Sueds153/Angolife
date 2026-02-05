@@ -5,20 +5,29 @@ import { NewsItem } from '../types';
 import { Skeleton } from '../components/ui/Skeleton';
 import { useFavorites } from '../context/FavoritesContext';
 import { useToast } from '../context/ToastContext';
+import { AuthService } from '../services/AuthService';
+import { useAuth } from '../context/AuthContext';
 
 export const News: React.FC = () => {
     const [news, setNews] = useState<NewsItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isAdmin, setIsAdmin] = useState(false);
+    const { user } = useAuth();
     const { isFavorite, addFavorite, removeFavorite } = useFavorites();
     const { addToast } = useToast();
 
     useEffect(() => {
         loadNews();
-    }, []);
+        if (user) {
+            AuthService.isAdmin(user).then(setIsAdmin);
+        }
+    }, [user]);
 
     const loadNews = async () => {
         const data = await NewsService.getNews();
-        setNews(data);
+        // Filter only published news for the main feed
+        const publishedNews = data.filter(item => !item.status || item.status === 'published');
+        setNews(publishedNews);
         setLoading(false);
     };
 
@@ -46,6 +55,15 @@ export const News: React.FC = () => {
                     <h1 className="text-3xl font-display font-bold text-white mb-2">Últimas Notícias</h1>
                     <p className="text-gray-400">Atualizações exclusivas do mercado angolano</p>
                 </div>
+                {isAdmin && (
+                    <Link 
+                        to="/admin/news" 
+                        className="flex items-center gap-2 bg-gold-gradient text-background-dark px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-gold-primary/20 hover:scale-105 transition-transform"
+                    >
+                        <span className="material-symbols-outlined text-sm">add_circle</span>
+                        Nova Notícia
+                    </Link>
+                )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
