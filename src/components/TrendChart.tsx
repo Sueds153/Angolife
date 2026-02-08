@@ -74,7 +74,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({ data, currency }) => {
             dataKey="date"
             tickFormatter={formatDate}
             stroke="#4B5563"
-            fontSize={10}
+            tick={{ fontSize: 10 }}
             tickLine={false}
             axisLine={false}
           />

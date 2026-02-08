@@ -28,7 +28,7 @@ serve(async (req) => {
 
     // Preparar prompt específico baseado no tipo
     let systemPrompt = '';
-    let userPrompt = prompt;
+    const userPrompt = prompt;
 
     if (type === 'market_insight') {
       systemPrompt = `Você é um analista financeiro especialista no mercado cambial angolano. 
@@ -74,8 +74,8 @@ serve(async (req) => {
       throw new Error(data.error?.message || 'Gemini API failed');
     }
 
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 
-                 'Análise não disponível no momento.';
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      'Análise não disponível no momento.';
 
     return new Response(
       JSON.stringify({ text: text.trim() }),
@@ -89,11 +89,11 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Edge Function error:', error);
-    
+
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: error.message,
-        text: 'Análise temporariamente indisponível.' 
+        text: 'Análise temporariamente indisponível.'
       }),
       {
         status: 500,

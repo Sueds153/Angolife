@@ -1,24 +1,18 @@
-// AlertService.ts
 
-class AlertService {
-    private alerts: string[];
+export const AlertService = {
+  saveAlert: (alert: { currency: string; threshold: number; type: string }) => {
+    console.log('Alert saved:', alert);
+    // TODO: Implement persistence (LocalStorage or Supabase)
+    const existing = JSON.parse(localStorage.getItem('angolife_alerts') || '[]');
+    existing.push(alert);
+    localStorage.setItem('angolife_alerts', JSON.stringify(existing));
+  },
 
-    constructor() {
-        this.alerts = [];
-    }
+  getAlerts: () => {
+    return JSON.parse(localStorage.getItem('angolife_alerts') || '[]');
+  },
 
-    public addAlert(alert: string) {
-        this.alerts.push(alert);
-    }
-
-    public getAlerts(): string[] {
-        return this.alerts;
-    }
-
-    public clearAlerts() {
-        this.alerts = [];
-    }
-}
-
-// Exporting the AlertService class for use in other modules
-export default AlertService;
+  clearAlerts: () => {
+    localStorage.removeItem('angolife_alerts');
+  }
+};

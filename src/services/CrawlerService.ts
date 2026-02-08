@@ -25,7 +25,7 @@ export const CrawlerService = {
     /**
      * Helper to upsert job to database
      */
-    async saveJob(job: any, url: string) {
+    async saveJob(job: { title?: string; company?: string; location?: string; type?: string; link?: string; description?: string }, url: string) {
         const sourceName = new URL(url).hostname.replace('www.', '');
         const { error } = await supabase
             .from('jobs')
@@ -76,7 +76,7 @@ export const CrawlerService = {
     /**
      * Helper to upsert promotion to database
      */
-    async savePromotion(item: any, url: string) {
+    async savePromotion(item: { productName?: string; price?: string; store?: string; location?: string; category?: string }, url: string) {
         const { error } = await supabase
             .from('promotions')
             .upsert({

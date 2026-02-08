@@ -39,7 +39,7 @@ export const JobService = {
     if (error || !data) {
       return null;
     }
-    
+
     return JobService.mapJob(data);
   },
 
@@ -95,8 +95,24 @@ export const JobService = {
       .eq('id', id);
   },
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  mapJob: (job: any): JobListing => ({
+  mapJob: (job: {
+    id: string;
+    title: string;
+    company: string;
+    location: string;
+    type: string;
+    created_at: string;
+    salary?: string;
+    salary_value?: number;
+    is_elite?: boolean;
+    image?: string;
+    description?: string;
+    email?: string;
+    phone?: string;
+    source?: string;
+    external_link?: string;
+    status?: 'pending' | 'published';
+  }): JobListing => ({
     id: job?.id || '',
     title: job?.title || 'Sem Título',
     company: job?.company || 'Empresa Privada',

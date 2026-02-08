@@ -37,7 +37,7 @@ export const HybridInsightService = {
     try {
       // Timeout de 5s para não deixar usuário esperando
       const geminiPromise = getGeminiInsight(rates);
-      const timeoutPromise = new Promise<string>((_, reject) => 
+      const timeoutPromise = new Promise<string>((_, reject) =>
         setTimeout(() => reject(new Error('Gemini timeout')), 5000)
       );
 
@@ -54,7 +54,7 @@ export const HybridInsightService = {
       } else {
         console.log('📊 [HybridInsight] Using rules-based insight (Gemini returned similar)');
       }
-    } catch (error) {
+    } catch {
       // Gemini falhou - mantém regras (já foi retornado)
       console.log('📊 [HybridInsight] Using rules-based insight (Gemini unavailable)');
     }
@@ -68,7 +68,7 @@ export const HybridInsightService = {
     try {
       // Tentar Gemini com timeout de 3s
       const geminiPromise = getGeminiInsight(rates);
-      const timeoutPromise = new Promise<string>((_, reject) => 
+      const timeoutPromise = new Promise<string>((_, reject) =>
         setTimeout(() => reject(new Error('Timeout')), 3000)
       );
 
@@ -81,7 +81,7 @@ export const HybridInsightService = {
           timestamp: new Date()
         };
       }
-    } catch (error) {
+    } catch {
       // Fallback silencioso
     }
 
@@ -109,10 +109,10 @@ export const HybridInsightService = {
 
       if (aiContext && aiContext.length > 20) {
         // Combinar: regras técnicas + contexto IA
-        const combined = trendAnalysis 
+        const combined = trendAnalysis
           ? `${rulesInsight} ${trendAnalysis} 💡 ${aiContext}`
           : `${rulesInsight} 💡 ${aiContext}`;
-        
+
         return {
           text: combined,
           source: 'hybrid',

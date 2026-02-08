@@ -42,7 +42,7 @@ export const ExchangeService = {
         if (apiKey) {
           const res = await fetch(`https://api.currencybeacon.com/v1/latest?api_key=${apiKey}&base=USD&symbols=AOA,EUR`);
           const data = await res.json();
-          
+
           if (data.response && data.rates) {
             const usdToAoa = data.rates.AOA;
             const eurRate = data.rates.EUR;
@@ -69,7 +69,7 @@ export const ExchangeService = {
         if (apiKey) {
           const res = await fetch(`https://v6.exchangerate-api.com/v6/${apiKey}/latest/USD`);
           const data = await res.json();
-          
+
           if (data.result === 'success') {
             const usdToAoa = data.conversion_rates.AOA;
             const eurRate = data.conversion_rates.EUR;
@@ -94,7 +94,7 @@ export const ExchangeService = {
       try {
         const res = await fetch('https://api.exchangerate.host/latest?base=USD&symbols=AOA,EUR');
         const data = await res.json();
-        
+
         if (data.success && data.rates) {
           const usdToAoa = data.rates.AOA;
           const eurRate = data.rates.EUR;
@@ -118,7 +118,7 @@ export const ExchangeService = {
       try {
         const res = await fetch('https://open.er-api.com/v6/latest/USD');
         const data = await res.json();
-        
+
         if (data.result === 'success') {
           const usdToAoa = data.rates.AOA || 918;
           const eurRate = data.rates.EUR || 0.92;
@@ -139,7 +139,7 @@ export const ExchangeService = {
       throw new Error('Todas as APIs falharam');
     } catch (err) {
       console.error('[ExchangeService] Erro crítico:', err);
-      
+
       // Fallback 1: Cache antigo
       try {
         const { value } = await Preferences.get({ key: 'exchange_rates_cache' });
@@ -211,6 +211,9 @@ export const ExchangeService = {
 
     if (error) {
       console.error('Error updating rate:', error);
+    } else {
+      // Invalida cache para forçar recarregamento com a nova taxa informal
+      await Preferences.remove({ key: 'exchange_rates_cache' });
     }
 
     return ExchangeService.getRates();

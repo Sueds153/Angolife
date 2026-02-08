@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ExchangeRate } from '../types';
 import { BannerCard } from '../components/BannerCard';
 import { useToast } from '../context/ToastContext';
-import { NotificationService } from '../services/NotificationService';
+// import { NotificationService } from '../services/NotificationService';
 import { RewardedAd } from '../components/ads/RewardedAd';
 import { HybridInsightService } from '../services/HybridInsightService';
 import { AlertService } from '../services/AlertService';
@@ -18,7 +18,7 @@ export const Exchange: React.FC<ExchangeProps> = ({ rates }) => {
   const [amount, setAmount] = useState<string>('1');
   const [selectedCurrency, setSelectedCurrency] = useState<string>(rates[0]?.currency || 'USD');
   const [insight, setInsight] = useState<string>("Processando análise de mercado em tempo real...");
-  const [insightSource, setInsightSource] = useState<'rules' | 'ai' | 'hybrid'>('rules');
+  // const [insightSource, setInsightSource] = useState<'rules' | 'ai' | 'hybrid'>('rules'); // Unused
   const [showRewarded, setShowRewarded] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [pendingAlert, setPendingAlert] = useState(false);
@@ -44,6 +44,7 @@ export const Exchange: React.FC<ExchangeProps> = ({ rates }) => {
     setShowRewarded(true);
   };
 
+  /*
   const executeCreateAlert = async () => {
     const granted = await NotificationService.requestPermission();
     if (granted) {
@@ -56,6 +57,7 @@ export const Exchange: React.FC<ExchangeProps> = ({ rates }) => {
       addToast('Precisamos de permissão para enviar alertas.', 'error');
     }
   };
+  */
 
   const handleRewardEarned = () => {
     if (pendingAlert) {
@@ -77,7 +79,7 @@ export const Exchange: React.FC<ExchangeProps> = ({ rates }) => {
     // Sistema híbrido: mostra regras instantaneamente, enriquece com AI
     HybridInsightService.getHybridInsight(rates, (result) => {
       setInsight(result.text);
-      setInsightSource(result.source);
+      // setInsightSource(result.source);
     });
   }, [rates]);
 

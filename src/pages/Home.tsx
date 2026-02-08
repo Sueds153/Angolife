@@ -16,7 +16,7 @@ interface HomeProps {
 export const Home: React.FC<HomeProps> = ({ rates }) => {
   const { user } = useAuth();
   const [insight, setInsight] = useState<string>("Analisando mercado...");
-  const [insightSource, setInsightSource] = useState<'rules' | 'ai' | 'hybrid'>('rules');
+  // const [insightSource, setInsightSource] = useState<'rules' | 'ai' | 'hybrid'>('rules');
   const [jobs, setJobs] = useState<JobListing[]>([]);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
 
@@ -24,7 +24,7 @@ export const Home: React.FC<HomeProps> = ({ rates }) => {
     // Sistema híbrido: resposta instantânea + enriquecimento AI
     HybridInsightService.getHybridInsight(rates, (result) => {
       setInsight(result.text);
-      setInsightSource(result.source);
+      // setInsightSource(result.source);
     });
 
     const loadData = async () => {
