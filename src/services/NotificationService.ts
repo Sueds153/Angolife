@@ -1,12 +1,21 @@
 import { PushNotifications } from '@capacitor/push-notifications';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
+interface PermissionStatus {
+  display?: 'granted' | 'denied' | 'prompt' | 'prompt-with-rationale';
+  receive?: 'granted' | 'denied' | 'prompt' | 'prompt-with-rationale';
+}
+
 export const NotificationService = {
   requestPermission: async (): Promise<boolean> => {
     try {
-      const pushPerm = await PushNotifications.requestPermissions();
-      const localPerm = await LocalNotifications.requestPermissions();
-      return pushPerm.display === 'granted' && localPerm.display === 'granted';
+      const pushPerm = await PushNotifications.requestPermissions() as PermissionStatus;
+      const localPerm = await LocalNotifications.requestPermissions() as PermissionStatus;
+      
+      const isPushGranted = pushPerm.display === 'granted' || pushPerm.receive === 'granted';
+      const isLocalGranted = localPerm.display === 'granted';
+      
+      return !!(isPushGranted && isLocalGranted);
     } catch (err) {
       console.error('Error requesting notification permissions:', err);
       return false;
@@ -34,14 +43,27 @@ export const NotificationService = {
   },
 
   registerPush: async () => {
-    await PushNotifications.addListener('registration', (token) => {
-      console.log('Push registration success, token: ' + token.value);
-    });
+    try {
+      // 1. Verificar se temos permissão
+      const perm = await PushNotifications.checkPermissions();
+      if (perm.receive !== 'granted') {
+        const req = await PushNotifications.requestPermissions();
+        if (req.receive !== 'granted') return;
+      }
 
-    await PushNotifications.addListener('registrationError', (error) => {
-      console.error('Error on registration: ' + JSON.stringify(error));
-    });
+      // 2. Adicionar Listeners de forma limpa
+      await PushNotifications.addListener('registration', (token) => {
+        console.log('Push registration success, token: ' + token.value);
+      });
 
-    await PushNotifications.register();
+      await PushNotifications.addListener('registrationError', (error) => {
+        console.error('Error on registration:', error.error);
+      });
+
+      // 3. Registrar de fato no APNS/FCM
+      await PushNotifications.register();
+    } catch (err) {
+      console.error('Error registering push notifications:', err);
+    }
   }
 };

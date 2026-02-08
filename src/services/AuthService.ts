@@ -76,16 +76,21 @@ export const AuthService = {
 
         // 2. Verificação no banco de dados (Tabela de perfis protegida)
         try {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('profiles')
                 .select('is_admin')
                 .eq('id', user.id)
                 .single();
             
+            if (error) {
+                console.error('Erro ao verificar status de admin:', error);
+                return false;
+            }
+            
             return data?.is_admin === true;
-        } catch {
-            // Fallback para metadata se a tabela falhar por algum motivo (menos seguro, mas mantém UX)
-            return user.user_metadata?.is_admin === true;
+        } catch (err) {
+            console.error('Falha crítica na verificação de admin:', err);
+            return false;
         }
     }
 };

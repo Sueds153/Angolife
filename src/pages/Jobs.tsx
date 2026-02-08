@@ -106,8 +106,9 @@ export const Jobs: React.FC = () => {
           <div className="p-6 rounded-2xl glass-card">
             <h3 className="text-sm font-black text-gray-900 dark:text-white mb-6 flex items-center gap-2 uppercase tracking-widest">Filtros Elite</h3>
             <div className="flex flex-col gap-4">
-              <label className="flex items-center gap-3 cursor-pointer group">
+              <label htmlFor="eliteFilter" className="flex items-center gap-3 cursor-pointer group">
                 <input 
+                  id="eliteFilter"
                   type="checkbox" 
                   checked={onlyElite}
                   onChange={(e) => setOnlyElite(e.target.checked)}
@@ -115,8 +116,9 @@ export const Jobs: React.FC = () => {
                 />
                 <span className="text-sm text-gray-600 dark:text-gray-400 group-hover:text-gold-primary">Só Vagas Elite</span>
               </label>
-              <label className="flex items-center gap-3 cursor-pointer group">
+              <label htmlFor="remoteFilter" className="flex items-center gap-3 cursor-pointer group">
                 <input 
+                  id="remoteFilter"
                   type="checkbox" 
                   checked={onlyRemote}
                   onChange={(e) => setOnlyRemote(e.target.checked)}
@@ -126,9 +128,10 @@ export const Jobs: React.FC = () => {
               </label>
 
               <div className="pt-4 border-t border-white/5">
-                <label className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-2 block">Salário Mínimo</label>
+                <label htmlFor="salaryFilter" className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-2 block">Salário Mínimo</label>
                 <div className="flex flex-col gap-2">
                   <input
+                    id="salaryFilter"
                     type="range"
                     min="0"
                     max="5000000"
@@ -209,9 +212,10 @@ export const Jobs: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <div className="hidden md:block w-48 h-32 bg-cover bg-center rounded-xl border border-border-gold opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all cursor-pointer"
-                onClick={() => window.location.hash = `/jobs/${job.id}`}
-                style={{ backgroundImage: `url('${job.image}')` }}></div>
+              <div className="hidden md:block w-48 h-32 rounded-xl border border-border-gold opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all cursor-pointer overflow-hidden"
+                onClick={() => window.location.hash = `/jobs/${job.id}`}>
+                <img src={job.image || ''} alt="" className="w-full h-full object-cover" />
+              </div>
             </div>
           )) : (
             <div className="flex flex-col items-center justify-center py-20 text-gray-600 dark:text-gray-400 italic">

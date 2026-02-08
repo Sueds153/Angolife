@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { NewsService } from '../services/NewsService';
 import { NewsItem } from '../types';
 import { Skeleton } from '../components/ui/Skeleton';
+import { LazyImage } from '../components/LazyImage';
 import { useFavorites } from '../context/FavoritesContext';
 import { useToast } from '../context/ToastContext';
 import { AuthService } from '../services/AuthService';
@@ -11,24 +12,41 @@ import { useAuth } from '../context/AuthContext';
 export const News: React.FC = () => {
     const [news, setNews] = useState<NewsItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
     const [isAdmin, setIsAdmin] = useState(false);
     const { user } = useAuth();
     const { isFavorite, addFavorite, removeFavorite } = useFavorites();
     const { addToast } = useToast();
 
     useEffect(() => {
-        loadNews();
+        loadNews(1);
         if (user) {
             AuthService.isAdmin(user).then(setIsAdmin);
         }
     }, [user]);
 
-    const loadNews = async () => {
-        const data = await NewsService.getNews();
+    const loadNews = async (pageNum: number) => {
+        setLoading(true);
+        const newNews = await NewsService.fetchNews(pageNum, 12);
+        
+        if (newNews.length < 12) setHasMore(false);
+
         // Filter only published news for the main feed
-        const publishedNews = data.filter(item => !item.status || item.status === 'published');
-        setNews(publishedNews);
+        const publishedNews = newNews.filter(item => !item.status || item.status === 'published');
+        
+        if (pageNum === 1) {
+            setNews(publishedNews);
+        } else {
+            setNews(prev => [...prev, ...publishedNews]);
+        }
         setLoading(false);
+    };
+
+    const handleLoadMore = () => {
+        const nextPage = page + 1;
+        setPage(nextPage);
+        loadNews(nextPage);
     };
 
     const toggleFavorite = (e: React.MouseEvent, item: NewsItem) => {
@@ -89,7 +107,7 @@ export const News: React.FC = () => {
                         >
                             {/* Image */}
                             <div className="aspect-video w-full overflow-hidden relative">
-                                <img
+                                <LazyImage
                                     src={item.image_url || 'https://via.placeholder.com/400'}
                                     alt={item.title}
                                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
@@ -132,6 +150,23 @@ export const News: React.FC = () => {
                     ))
                 )}
             </div>
+
+            {hasMore && !loading && (
+                <div className="flex justify-center mt-8">
+                    <button 
+                        onClick={handleLoadMore}
+                        className="bg-gold-gradient text-background-dark font-black px-8 py-3 rounded-full text-sm uppercase tracking-widest shadow-xl shadow-gold-primary/20 hover:scale-105 transition-transform"
+                    >
+                        Carregar Mais Notícias
+                    </button>
+                </div>
+            )}
+
+            {loading && (
+                <div className="flex justify-center mt-8 text-gold-primary">
+                    <span className="material-symbols-outlined animate-spin text-4xl">progress_activity</span>
+                </div>
+            )}
         </div>
     );
 };

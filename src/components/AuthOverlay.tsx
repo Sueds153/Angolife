@@ -36,8 +36,9 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({ mode: initialMode, onC
         addToast('E-mail de recuperação enviado!', 'success');
         setInternalMode('login');
       }
-    } catch (err: any) {
-      addToast(err.message || 'Erro na autenticação', 'error');
+    } catch (err) {
+      const error = err as { message?: string };
+      addToast(error.message || 'Erro na autenticação', 'error');
     } finally {
       setIsLoading(false);
     }

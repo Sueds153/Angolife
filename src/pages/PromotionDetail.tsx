@@ -91,7 +91,9 @@ export const PromotionDetail: React.FC = () => {
         </Link>
 
         <div className="glass-card rounded-3xl overflow-hidden shadow-2xl">
-          <div className="aspect-video w-full bg-cover bg-center" style={{ backgroundImage: `url('${promo.image}')` }}></div>
+          <div className="aspect-video w-full overflow-hidden">
+            <img src={promo.image || ''} alt={promo.productName} className="w-full h-full object-cover" />
+          </div>
           <div className="p-8">
             <div className="flex justify-between items-start mb-6">
               <div>

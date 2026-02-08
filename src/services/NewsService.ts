@@ -2,11 +2,15 @@ import { supabase } from '../lib/supabase';
 import { NewsItem } from '../types';
 
 export const NewsService = {
-  getNews: async (): Promise<NewsItem[]> => {
+  fetchNews: async (page = 1, limit = 12): Promise<NewsItem[]> => {
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
     const { data, error } = await supabase
       .from('news')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(from, to);
 
     if (error) {
       console.error('Error fetching news:', error);
@@ -14,6 +18,10 @@ export const NewsService = {
     }
 
     return data || [];
+  },
+
+  getNews: async (): Promise<NewsItem[]> => {
+    return await NewsService.fetchNews(1, 100); // Legacy compatibility
   },
 
   getNewsById: async (id: string): Promise<NewsItem | null> => {

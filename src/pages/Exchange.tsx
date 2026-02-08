@@ -4,6 +4,8 @@ import { BannerCard } from '../components/BannerCard';
 import { useToast } from '../context/ToastContext';
 import { NotificationService } from '../services/NotificationService';
 import { RewardedAd } from '../components/ads/RewardedAd';
+import { HybridInsightService } from '../services/HybridInsightService';
+import { AlertService } from '../services/AlertService';
 import { PublicityService } from '../services/PublicityService';
 import { useAuth } from '../context/AuthContext';
 
@@ -16,6 +18,7 @@ export const Exchange: React.FC<ExchangeProps> = ({ rates }) => {
   const [amount, setAmount] = useState<string>('1');
   const [selectedCurrency, setSelectedCurrency] = useState<string>(rates[0]?.currency || 'USD');
   const [insight, setInsight] = useState<string>("Processando análise de mercado em tempo real...");
+  const [insightSource, setInsightSource] = useState<'rules' | 'ai' | 'hybrid'>('rules');
   const [showRewarded, setShowRewarded] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [pendingAlert, setPendingAlert] = useState(false);
@@ -56,7 +59,12 @@ export const Exchange: React.FC<ExchangeProps> = ({ rates }) => {
 
   const handleRewardEarned = () => {
     if (pendingAlert) {
-        executeCreateAlert();
+        AlertService.saveAlert({
+            currency: selectedCurrency,
+            threshold: parseFloat(amount || '0'),
+            type: 'above'
+        });
+        addToast('Alerta Configurado com Sucesso!', 'success');
         setPendingAlert(false);
     } else {
         setIsUnlocked(true);
@@ -66,8 +74,11 @@ export const Exchange: React.FC<ExchangeProps> = ({ rates }) => {
   };
 
   useEffect(() => {
-    // Mocking gemini service since file was removed
-    setInsight("O diferencial cambial mantém-se estável esta semana, favorecendo compras no mercado formal para importadores.");
+    // Sistema híbrido: mostra regras instantaneamente, enriquece com AI
+    HybridInsightService.getHybridInsight(rates, (result) => {
+      setInsight(result.text);
+      setInsightSource(result.source);
+    });
   }, [rates]);
 
   const currentRate = rates.find(r => r.currency === selectedCurrency);
@@ -107,9 +118,10 @@ export const Exchange: React.FC<ExchangeProps> = ({ rates }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Input Amount */}
                 <div className="flex flex-col gap-3">
-                  <label className="text-[10px] text-gray-500 uppercase font-black tracking-widest px-1">Valor a Converter</label>
+                  <label htmlFor="convertAmount" className="text-[10px] text-gray-500 uppercase font-black tracking-widest px-1">Valor a Converter</label>
                   <div className="relative group">
                     <input
+                      id="convertAmount"
                       type="number"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
@@ -117,7 +129,9 @@ export const Exchange: React.FC<ExchangeProps> = ({ rates }) => {
                       placeholder="0.00"
                     />
                     <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center gap-3">
+                      <label htmlFor="currencySelect" className="sr-only">Selecionar Moeda</label>
                       <select
+                        id="currencySelect"
                         value={selectedCurrency}
                         onChange={(e) => setSelectedCurrency(e.target.value)}
                         className="bg-gold-primary text-background-dark font-black rounded-lg border-none text-sm px-3 py-1 cursor-pointer focus:ring-0"

@@ -52,14 +52,16 @@ const App: React.FC = () => {
 
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <AppContent
-          rates={rates}
-          authMode={authMode}
-          setAuthMode={setAuthMode}
-          updateInformalRate={updateInformalRate}
-        />
-      </AuthProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <AppContent
+            rates={rates}
+            authMode={authMode}
+            setAuthMode={setAuthMode}
+            updateInformalRate={updateInformalRate}
+          />
+        </AuthProvider>
+      </ToastProvider>
     </ThemeProvider>
   );
 };
@@ -85,58 +87,56 @@ const AppContent: React.FC<{
   }, [addToast]);
 
   return (
-    <ToastProvider>
-      <FavoritesProvider>
-        <Router>
-          <Layout onAuthClick={(mode) => setAuthMode(mode)}>
-            <React.Suspense fallback={
-              <div className="flex justify-center items-center min-h-[60vh] text-gold-primary">
-                <span className="material-symbols-outlined animate-spin text-6xl">progress_activity</span>
-              </div>
-            }>
-              <Routes>
-                <Route path="/" element={<Home rates={rates} />} />
-                <Route path="/exchange" element={<Exchange rates={rates} />} />
-                <Route path="/jobs" element={<Jobs />} />
-                <Route path="/jobs/:id" element={<JobDetail />} />
-                <Route path="/news" element={<News />} />
-                <Route path="/news/:id" element={<NewsDetail />} />
-                 <Route path="/promotions" element={
-                  <ProtectedRoute>
-                    <Promotions />
-                  </ProtectedRoute>
-                } />
-                <Route path="/promotions/:id" element={
-                  <ProtectedRoute>
-                    <PromotionDetail />
-                  </ProtectedRoute>
-                } />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                
-                <Route path="/profile" element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                } />
-  
-                <Route path="/admin" element={
-                  <ProtectedRoute adminOnly>
-                    <Admin rates={rates} onUpdate={updateInformalRate} />
-                  </ProtectedRoute>
-                } />
-  
-                <Route path="/admin/news" element={
-                  <ProtectedRoute adminOnly>
-                    <AdminNews />
-                  </ProtectedRoute>
-                } />
-              </Routes>
-            </React.Suspense>
-          </Layout>
-          {authMode && <AuthOverlay mode={authMode} onClose={() => setAuthMode(null)} />}
-        </Router>
-      </FavoritesProvider>
-    </ToastProvider>
+    <FavoritesProvider>
+      <Router>
+        <Layout onAuthClick={(mode) => setAuthMode(mode)}>
+          <React.Suspense fallback={
+            <div className="flex justify-center items-center min-h-[60vh] text-gold-primary">
+              <span className="material-symbols-outlined animate-spin text-6xl">progress_activity</span>
+            </div>
+          }>
+            <Routes>
+              <Route path="/" element={<Home rates={rates} />} />
+              <Route path="/exchange" element={<Exchange rates={rates} />} />
+              <Route path="/jobs" element={<Jobs />} />
+              <Route path="/jobs/:id" element={<JobDetail />} />
+              <Route path="/news" element={<News />} />
+              <Route path="/news/:id" element={<NewsDetail />} />
+               <Route path="/promotions" element={
+                <ProtectedRoute>
+                  <Promotions />
+                </ProtectedRoute>
+              } />
+              <Route path="/promotions/:id" element={
+                <ProtectedRoute>
+                  <PromotionDetail />
+                </ProtectedRoute>
+              } />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/admin" element={
+                <ProtectedRoute adminOnly>
+                  <Admin rates={rates} onUpdate={updateInformalRate} />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/admin/news" element={
+                <ProtectedRoute adminOnly>
+                  <AdminNews />
+                </ProtectedRoute>
+              } />
+            </Routes>
+          </React.Suspense>
+        </Layout>
+        {authMode && <AuthOverlay mode={authMode} onClose={() => setAuthMode(null)} />}
+      </Router>
+    </FavoritesProvider>
   );
 };
 

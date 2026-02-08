@@ -6,6 +6,7 @@ import { PromotionService } from '../services/PromotionService';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 import { AuthOverlay } from '../components/AuthOverlay';
+import { LazyImage } from '../components/LazyImage';
 import { useFavorites } from '../context/FavoritesContext';
 
 export const Promotions: React.FC = () => {
@@ -227,7 +228,12 @@ export const Promotions: React.FC = () => {
           .filter(p => selectedCategory === 'All' || p.category === selectedCategory)
           .map(promo => (
             <div key={promo.id} className="glass-card rounded-2xl overflow-hidden flex flex-col group hover:border-gold-primary/50 transition-all">
-              <Link to={`/promotions/${promo.id}`} className="aspect-square bg-cover bg-center relative block overflow-hidden">
+              <Link to={`/promotions/${promo.id}`} className="aspect-square relative block overflow-hidden">
+                <LazyImage 
+                  src={promo.image || 'https://via.placeholder.com/400'}
+                  alt={promo.productName}
+                  className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                />
                 <div className="absolute inset-0 bg-gold-primary/0 group-hover:bg-gold-primary/10 transition-all"></div>
                 <div className="absolute top-4 right-4">
                   <button

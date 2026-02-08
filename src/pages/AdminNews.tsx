@@ -84,8 +84,9 @@ export const AdminNews: React.FC = () => {
             
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Título da Notícia</label>
+                <label htmlFor="newsTitle" className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Título da Notícia</label>
                 <input 
+                  id="newsTitle"
                   type="text" 
                   value={formData.title}
                   onChange={e => setFormData({...formData, title: e.target.value})}
@@ -96,8 +97,9 @@ export const AdminNews: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Descrição</label>
+                <label htmlFor="newsDesc" className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Descrição</label>
                 <textarea 
+                  id="newsDesc"
                   value={formData.description}
                   onChange={e => setFormData({...formData, description: e.target.value})}
                   className="w-full bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gold-primary transition-colors text-gray-900 dark:text-white h-24 resize-none"
@@ -107,8 +109,9 @@ export const AdminNews: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">URL da Imagem (Vertical 9:16)</label>
+                <label htmlFor="newsImage" className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">URL da Imagem (Vertical 9:16)</label>
                 <input 
+                  id="newsImage"
                   type="url" 
                   value={formData.image_url}
                   onChange={e => setFormData({...formData, image_url: e.target.value})}
@@ -120,8 +123,9 @@ export const AdminNews: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Conteúdo Completo (Notícia Completa)</label>
+                <label htmlFor="newsContent" className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Conteúdo Completo (Notícia Completa)</label>
                 <textarea 
+                  id="newsContent"
                   value={formData.content}
                   onChange={e => setFormData({...formData, content: e.target.value})}
                   className="w-full bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gold-primary transition-colors text-gray-900 dark:text-white h-48"
@@ -132,8 +136,9 @@ export const AdminNews: React.FC = () => {
 
               <div className="flex gap-4">
                 <div className="flex-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Categoria</label>
+                  <label htmlFor="newsCategory" className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Categoria</label>
                   <select 
+                    id="newsCategory"
                     value={formData.category}
                     onChange={e => setFormData({...formData, category: e.target.value})}
                     className="w-full bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gold-primary transition-colors text-gray-900 dark:text-white"
@@ -145,8 +150,9 @@ export const AdminNews: React.FC = () => {
                   </select>
                 </div>
                 <div className="flex-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Status</label>
+                  <label htmlFor="newsStatus" className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Status</label>
                   <select 
+                    id="newsStatus"
                     value={formData.status}
                     onChange={e => setFormData({...formData, status: e.target.value as 'draft' | 'published'})}
                     className="w-full bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gold-primary transition-colors text-gray-900 dark:text-white"
@@ -188,10 +194,9 @@ export const AdminNews: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {items.map(item => (
                 <div key={item.id} className="flex gap-4 p-4 glass-card rounded-2xl group border border-transparent hover:border-gold-primary/30 transition-all bg-white dark:bg-white/5">
-                  <div 
-                    className="w-20 h-24 rounded-lg bg-cover bg-center shrink-0"
-                    style={{ backgroundImage: `url('${item.image_url}')` }}
-                  ></div>
+                  <div className="w-20 h-24 rounded-lg shrink-0 overflow-hidden">
+                    <img src={item.image_url || ''} alt="" className="w-full h-full object-cover" />
+                  </div>
                   <div className="flex flex-col justify-between flex-1 min-w-0">
                     <div>
                       <h4 className="font-bold text-gray-900 dark:text-white truncate" title={item.title}>{item.title}</h4>

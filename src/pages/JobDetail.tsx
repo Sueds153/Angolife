@@ -144,12 +144,14 @@ export const JobDetail: React.FC = () => {
           {/* Main Job Header Card - LinkedIn Style */}
           <div className="glass-card rounded-2xl overflow-hidden border border-border-gold bg-surface-dark/40 shadow-2xl">
             {/* Cover Image Placeholder */}
-            <div className="h-40 w-full bg-cover bg-center opacity-40 grayscale" style={{ backgroundImage: `url('${job.image}')` }}></div>
+            <div className="h-40 w-full overflow-hidden opacity-40 grayscale">
+              <img src={job.image || ''} alt="" className="w-full h-full object-cover" />
+            </div>
             
             <div className="px-8 pb-8 -mt-12 relative z-10">
               <div className="flex flex-col md:flex-row gap-6 items-end justify-between">
                 <div className="size-28 rounded-2xl bg-surface-dark border-4 border-background-dark flex items-center justify-center shrink-0 shadow-2xl">
-                  <span className="material-symbols-outlined text-6xl text-gold-primary" style={{ fontVariationSettings: "'FILL' 1" }}>business</span>
+                  <span className="material-symbols-outlined text-6xl text-gold-primary icon-fill">business</span>
                 </div>
                 
                 <div className="flex gap-3 w-full md:w-auto mt-6 md:mt-0">
@@ -390,7 +392,7 @@ export const JobDetail: React.FC = () => {
             <h3 className="text-xs font-black text-gray-500 mb-8 uppercase tracking-[0.2em] border-b border-border-gold pb-4">A Entidade</h3>
             <div className="flex items-center gap-4 mb-6">
                <div className="size-16 rounded-2xl bg-gold-primary/10 border border-gold-primary/20 flex items-center justify-center shrink-0">
-                  <span className="text-gold-primary material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>corporate_fare</span>
+                  <span className="text-gold-primary material-symbols-outlined text-4xl icon-fill">corporate_fare</span>
                 </div>
                 <div>
                    <h4 className="text-white font-black text-xl leading-tight">{job.company}</h4>

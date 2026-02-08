@@ -40,8 +40,8 @@ export const NewsReel: React.FC = () => {
         {news.map((item) => (
           <Link to={`/news/${item.id}`} key={item.id} className="snap-center shrink-0 relative w-[220px] h-[380px] rounded-2xl overflow-hidden group cursor-pointer shadow-lg hover:shadow-gold-primary/20 transition-all border border-transparent hover:border-gold-primary/50">
             {/* Background Image */}
-            <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" 
-                 style={{ backgroundImage: `url('${item.image_url}')` }}>
+            <div className="absolute inset-0 transition-transform duration-700 group-hover:scale-110">
+              <img src={item.image_url || ''} alt="" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-90"></div>
             </div>
 

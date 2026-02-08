@@ -9,7 +9,7 @@ interface BannerCardProps {
 
 declare global {
   interface Window {
-    adsbygoogle: any[];
+    adsbygoogle: { push: (obj: object) => void }[];
   }
 }
 
@@ -70,8 +70,9 @@ export const BannerCard: React.FC<BannerCardProps> = ({ type, className = "" }) 
 
   if (type === 'sponsored') {
     return (
-      <div className={`relative w-full rounded-3xl overflow-hidden min-h-[260px] flex flex-col justify-end p-10 bg-cover bg-center border border-border-gold shadow-2xl ${className}`}
-        style={{ backgroundImage: `linear-gradient(to top, rgba(10,10,10,0.95), transparent), url('https://picsum.photos/seed/ads/1200/600')` }}>
+      <div className={`relative w-full rounded-3xl overflow-hidden min-h-[260px] flex flex-col justify-end p-10 border border-border-gold shadow-2xl ${className}`}>
+        <img src="https://picsum.photos/seed/ads/1200/600" alt="Background" className="absolute inset-0 w-full h-full object-cover opacity-60" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background-dark/95 to-transparent"></div>
         <div className="absolute top-0 left-0 w-full h-1 bg-gold-gradient"></div>
         <div className="relative z-10 max-w-xl">
           <h3 className="text-3xl font-black text-white mb-3 uppercase tracking-tighter leading-none">
@@ -96,8 +97,7 @@ export const BannerCard: React.FC<BannerCardProps> = ({ type, className = "" }) 
       <div className={`w-full bg-surface-dark/50 rounded-2xl flex flex-col items-center justify-center border border-border-gold/30 overflow-hidden p-4 min-h-[100px] ${className}`}>
         <p className="text-[10px] text-gray-600 uppercase mb-2">Publicidade</p>
         <div className="w-full h-full flex items-center justify-center bg-transparent">
-          <ins className="adsbygoogle"
-            style={{ display: 'block' }}
+          <ins className="adsbygoogle block"
             data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
             data-ad-slot="1234567890"
             data-ad-format="auto"

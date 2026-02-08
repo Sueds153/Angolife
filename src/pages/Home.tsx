@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 
 import { JobService } from '../services/JobService';
 import { PromotionService } from '../services/PromotionService';
+import { HybridInsightService } from '../services/HybridInsightService';
 import { useAuth } from '../context/AuthContext';
 
 interface HomeProps {
@@ -14,13 +15,17 @@ interface HomeProps {
 
 export const Home: React.FC<HomeProps> = ({ rates }) => {
   const { user } = useAuth();
-  const [insight, setInsight] = useState<string>("Processando análise de mercado...");
+  const [insight, setInsight] = useState<string>("Analisando mercado...");
+  const [insightSource, setInsightSource] = useState<'rules' | 'ai' | 'hybrid'>('rules');
   const [jobs, setJobs] = useState<JobListing[]>([]);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
 
   useEffect(() => {
-    // Mocking gemini service if removed
-    setInsight("Mercado favorável para investimento em moeda estrangeira.");
+    // Sistema híbrido: resposta instantânea + enriquecimento AI
+    HybridInsightService.getHybridInsight(rates, (result) => {
+      setInsight(result.text);
+      setInsightSource(result.source);
+    });
 
     const loadData = async () => {
         const latestJobs = await JobService.getLatestJobs(3);
@@ -130,7 +135,7 @@ export const Home: React.FC<HomeProps> = ({ rates }) => {
                   to={`/jobs/${job.id}`}
                   key={job.id}
                   className="flex items-center gap-4 p-4 glass-card rounded-2xl border-l-4 border-l-gold-primary hover:bg-gold-primary/5 transition-all cursor-pointer group animate-fade-in"
-                  style={{ animationDelay: `${index * 100}ms` }}
+                  style={{ animationDelay: `${index * 100}ms` } as React.CSSProperties}
                 >
                   <div className="size-12 rounded-xl bg-gold-primary/10 flex items-center justify-center shrink-0 border border-gold-primary/20">
                     <span className="text-gold-primary material-symbols-outlined">business</span>
@@ -155,7 +160,9 @@ export const Home: React.FC<HomeProps> = ({ rates }) => {
             <div className="grid grid-cols-1 gap-4">
               {promotions.map((promo) => (
                 <Link to={`/promotions/${promo.id}`} key={promo.id} className="flex gap-4 p-4 glass-card rounded-2xl group hover:border-gold-primary/40 transition-all">
-                  <div className="size-24 rounded-xl bg-cover bg-center shrink-0 border border-border-gold" style={{ backgroundImage: `url('${promo.image}')` }}></div>
+                  <div className="size-24 rounded-xl shrink-0 border border-border-gold overflow-hidden">
+                    <img src={promo.image || ''} alt={promo.productName} className="w-full h-full object-cover" />
+                  </div>
                   <div className="flex flex-col justify-between flex-1">
                     <div>
                       <div className="flex justify-between items-start">

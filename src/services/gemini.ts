@@ -1,7 +1,7 @@
-
 import { supabase } from '../lib/supabase';
+import { ExchangeRate } from '../types';
 
-export const getMarketInsight = async (rates: unknown) => {
+export const getMarketInsight = async (rates: ExchangeRate[]) => {
   try {
     const { data, error } = await supabase.functions.invoke('gemini-insight', {
       body: { 
@@ -11,7 +11,7 @@ export const getMarketInsight = async (rates: unknown) => {
     });
 
     if (error) throw error;
-    return data.text || "A convergência entre as taxas formal e informal indica uma maturidade crescente no ecossistema financeiro local.";
+    return data?.text || "A convergência entre as taxas formal e informal indica uma maturidade crescente no ecossistema financeiro local.";
   } catch (error) {
     console.error("Gemini Insight Error:", error);
     return "Mantenha cautela nas operações de câmbio devido à volatilidade sazonal do mercado informal.";
@@ -28,7 +28,7 @@ export const summarizeJob = async (jobTitle: string, company: string) => {
     });
 
     if (error) throw error;
-    return data.text;
+    return data?.text;
   } catch {
     return "Uma oportunidade única de crescimento profissional em uma das instituições de maior prestígio no mercado angolano.";
   }
