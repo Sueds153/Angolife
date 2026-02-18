@@ -1,0 +1,328 @@
+
+import React, { useState, useEffect } from 'react';
+import { Navbar } from './components/Navbar';
+import { Footer } from './components/Footer';
+import { Background } from './components/Background';
+import { HomePage } from './pages/HomePage';
+import { JobsPage } from './pages/JobsPage';
+import { ExchangePage } from './pages/ExchangePage';
+import { DealsPage } from './pages/DealsPage';
+import { NewsPage } from './pages/NewsPage';
+import { AdminPage } from './pages/AdminPage';
+import { ProfilePage } from './pages/ProfilePage';
+import { CVBuilderPage } from './pages/CVBuilderPage'; // Importado
+import { AdBanner } from './components/AdBanner';
+import { InterstitialAd, RewardedAd } from './components/AdOverlays';
+import { AuthModal } from './components/AuthModal';
+import { NotificationToast } from './components/NotificationToast'; 
+import { NotificationService } from './services/notificationService'; 
+import { UserProfile, AppNotification } from './types';
+import { Home, Briefcase, DollarSign, Tag, Newspaper, FileText } from 'lucide-react'; // Added FileText
+
+type Page = 'home' | 'jobs' | 'exchange' | 'deals' | 'news' | 'admin' | 'profile' | 'cv-builder';
+
+const App: React.FC = () => {
+  const [currentPage, setCurrentPage] = useState<Page>('home');
+  
+  // User Data
+  const [user, setUser] = useState<UserProfile | null>(null);
+
+  // Auth State
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem('auth_token') === 'simulated-token';
+  });
+  
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('theme');
+      if (saved) return saved === 'dark';
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
+
+  const [showAuthModal, setShowAuthModal] = useState<'login' | 'register' | null>(null);
+  const [showRewardAd, setShowRewardAd] = useState(false);
+  const [rewardCallback, setRewardCallback] = useState<(() => void) | null>(null);
+
+  // Theme Toggle
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode);
+    document.documentElement.classList.toggle('dark');
+  };
+
+  // Check system preference on load
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (isDarkMode) {
+      root.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      root.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDarkMode]);
+
+  // Navigation Handler
+  const navigateTo = (page: string) => {
+    setCurrentPage(page);
+    window.scrollTo(0, 0);
+  };
+
+  // Mock Authentication
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    // Simulate API call
+    setTimeout(() => {
+      setIsAuthenticated(true);
+      localStorage.setItem('auth_token', 'simulated-token');
+      setShowAuthModal(null);
+      alert('Login efetuado com sucesso!');
+    }, 1000);
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setTimeout(() => {
+      setIsAuthenticated(true);
+      localStorage.setItem('auth_token', 'simulated-token');
+      setShowAuthModal(null);
+      alert('Conta criada com sucesso! Bem-vindo ao Angolife.');
+    }, 1000);
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    localStorage.removeItem('auth_token');
+    navigateTo('home');
+  };
+
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  
+  const [showInterstitial, setShowInterstitial] = useState(false);
+  const [interstitialDuration, setInterstitialDuration] = useState(5);
+  const [interstitialCallback, setInterstitialCallback] = useState<(() => void) | null>(null);
+
+  // Simulação de Push Notification (Demo)
+  useEffect(() => {
+    const simulatePush = () => {
+      const isJob = Math.random() > 0.7;
+      const mockNotification: AppNotification = isJob ? {
+        id: Date.now().toString(),
+        title: 'Nova Vaga Premium',
+        message: 'A Sonangol E.P. acabou de publicar uma vaga para Engenheiro Sénior. Candidata-te agora!',
+        type: 'job',
+        timestamp: Date.now()
+      } : {
+        id: Date.now().toString(),
+        title: 'Alerta de Câmbio',
+        message: 'O Dólar teve uma ligeira queda no mercado informal. Melhor hora para comprar!',
+        type: 'market',
+        timestamp: Date.now()
+      };
+      setActiveNotification(mockNotification);
+      NotificationService.sendNativeNotification(mockNotification.title, mockNotification.message);
+    };
+    const timer = setTimeout(simulatePush, 8000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const [showRewarded, setShowRewarded] = useState(false);
+  const [pendingAdPage, setPendingAdPage] = useState<Page>('home'); 
+  // const [rewardCallback, setRewardCallback] = useState<(() => void) | null>(null); // This was already defined above
+
+  // Notification State
+  const [activeNotification, setActiveNotification] = useState<AppNotification | null>(null);
+
+
+  const handleLoginSuccess = (email: string) => {
+    const mockUser: UserProfile = {
+      email,
+      referralCount: 0,
+      isPremium: false,
+      referralCode: `ANGO-${Math.random().toString(36).substring(7).toUpperCase()}`,
+      isAdmin: email.toLowerCase() === 'admin@angolife.ao',
+      cvCredits: 0
+    };
+    setUser(mockUser);
+    setIsAuthModalOpen(false);
+  };
+
+  const handleUpgradeToPremium = (plan: 'pack3' | 'monthly' | 'yearly') => {
+    if (!user) return;
+    
+    let updatedUser = { ...user };
+    const now = Date.now();
+
+    if (plan === 'pack3') {
+      updatedUser.cvCredits = (updatedUser.cvCredits || 0) + 3;
+    } else if (plan === 'monthly') {
+      updatedUser.isPremium = true;
+      updatedUser.subscriptionType = 'monthly';
+      updatedUser.premiumExpiry = now + (30 * 24 * 60 * 60 * 1000); // 30 days
+    } else if (plan === 'yearly') {
+      updatedUser.isPremium = true;
+      updatedUser.subscriptionType = 'yearly';
+      updatedUser.premiumExpiry = now + (365 * 24 * 60 * 60 * 1000); // 365 days
+    }
+
+    setUser(updatedUser);
+    // In a real app, save to backend here
+  };
+
+  const handleNavigate = (page: Page) => {
+    if (page === currentPage) return;
+    const highValueTransitions = ['jobs', 'exchange', 'news', 'deals', 'cv-builder'];
+    const shouldShowAd = !user?.isPremium && highValueTransitions.includes(page) && Math.random() > 0.6; 
+    
+    if (shouldShowAd) {
+      setPendingAdPage(page);
+      setInterstitialDuration(5); 
+      setShowInterstitial(true);
+    } else {
+      setCurrentPage(page);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleNotificationClick = () => {
+    if (activeNotification?.type === 'job') handleNavigate('jobs');
+    if (activeNotification?.type === 'market') handleNavigate('exchange');
+    setActiveNotification(null);
+  };
+
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'home': return <HomePage onNavigate={handleNavigate} />;
+      case 'jobs': return <JobsPage 
+        isAuthenticated={!!user} 
+        onRequireAuth={() => setIsAuthModalOpen(true)} 
+        onShowInterstitial={(callback) => {
+          setInterstitialDuration(15);
+          setInterstitialCallback(() => callback);
+          setShowInterstitial(true);
+        }}
+      />;
+      case 'exchange': return <ExchangePage isAuthenticated={!!user} userEmail={user?.email} onRequireAuth={() => setIsAuthModalOpen(true)} isDarkMode={isDarkMode} />;
+      case 'deals': return <DealsPage isAuthenticated={!!user} onRequireAuth={() => setIsAuthModalOpen(true)} />;
+      case 'news': return <NewsPage isAuthenticated={!!user} onRequireAuth={() => setIsAuthModalOpen(true)} />;
+      case 'cv-builder': return <CVBuilderPage 
+        isAuthenticated={!!user} 
+        userProfile={user || undefined}
+        onRequireAuth={() => setIsAuthModalOpen(true)}
+        onUpgrade={handleUpgradeToPremium}
+        onDecrementCredit={() => user && setUser({ ...user, cvCredits: Math.max(0, user.cvCredits - 1) })}
+      />;
+      case 'admin': return <AdminPage />;
+      case 'profile': return user ? <ProfilePage user={user} onLogout={() => setUser(null)} /> : <HomePage onNavigate={handleNavigate} />;
+      default: return <HomePage onNavigate={handleNavigate} />;
+    }
+  };
+
+  const showStickyAd = !user?.isPremium;
+
+  return (
+    <div className="min-h-screen bg-white dark:bg-slate-900 flex justify-center overflow-x-hidden text-slate-900 dark:text-white transition-colors duration-300 print:bg-white print:text-black">
+      <div className="print:hidden"><Background /></div>
+      
+      {/* App Shell - Estritamente Mobile */}
+      {/* App Shell - Responsive */}
+      <div className="w-full max-w-[480px] md:max-w-7xl md:mx-auto print:max-w-none bg-white dark:bg-slate-900 min-h-screen shadow-[0_0_80px_rgba(0,0,0,0.1)] md:shadow-none print:shadow-none flex flex-col relative text-slate-900 dark:text-white transition-all duration-500">
+        
+        {activeNotification && (
+          <NotificationToast 
+            notification={activeNotification} 
+            onClose={() => setActiveNotification(null)}
+            onOpen={handleNotificationClick}
+          />
+        )}
+
+        <Navbar 
+          currentPage={currentPage} 
+          onNavigate={handleNavigate} 
+          isDarkMode={isDarkMode}
+          toggleTheme={toggleTheme}
+          isAuthenticated={!!user}
+          isAdmin={user?.isAdmin || false}
+          onOpenAuth={(mode) => { setAuthMode(mode); setIsAuthModalOpen(true); }}
+          onLogout={() => setUser(null)}
+        />
+
+        <main className="flex-grow flex flex-col">
+          <div className="flex-grow px-4 py-6 animate-fade-in print:p-0">
+            {renderPage()}
+          </div>
+          
+          <div className="print:hidden"><Footer onNavigate={handleNavigate} /></div>
+          
+          <div className={`${showStickyAd ? 'h-[100px]' : 'h-[60px]'} bg-black md:hidden print:hidden`}></div>
+        </main>
+
+        <nav 
+          className={`fixed bottom-0 left-1/2 -translate-x-1/2 md:hidden w-full max-w-[480px] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-orange-500/20 gold-border-t-subtle z-[100] flex justify-around items-center px-2 py-3 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] print:hidden ${showStickyAd ? 'mb-[50px]' : 'mb-0'}`}
+        >
+          {[
+            { id: 'home', label: 'Início', icon: Home },
+            { id: 'jobs', label: 'Vagas', icon: Briefcase },
+            { id: 'cv-builder', label: 'CV', icon: FileText },
+            { id: 'exchange', label: 'Câmbio', icon: DollarSign },
+            { id: 'deals', label: 'Ofertas', icon: Tag },
+          ].map((item) => (
+            <button 
+              key={item.id}
+              onClick={() => handleNavigate(item.id as Page)}
+              className={`flex flex-col items-center justify-center min-w-[50px] py-1 transition-all active:scale-90 ${currentPage === item.id ? 'text-orange-500' : 'text-slate-500 dark:text-slate-400'}`}
+            >
+              <item.icon size={22} strokeWidth={currentPage === item.id ? 2.5 : 2} />
+              <span className={`text-[9px] font-black uppercase tracking-tighter mt-1 ${currentPage === item.id ? 'opacity-100' : 'opacity-60'}`}>
+                {item.label}
+              </span>
+            </button>
+          ))}
+        </nav>
+
+        {showStickyAd && (
+          <div className="fixed bottom-0 left-1/2 -translate-x-1/2 md:hidden w-full max-w-[480px] z-[110] bg-white dark:bg-black border-t border-orange-500/10 shadow-2xl print:hidden">
+            <div className="pb-[env(safe-area-inset-bottom)]">
+              <AdBanner format="sticky-footer" />
+            </div>
+          </div>
+        )}
+      </div>
+
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+        onLogin={handleLoginSuccess}
+        initialMode={authMode}
+      />
+
+      {showInterstitial && (
+        <InterstitialAd 
+          duration={interstitialDuration}
+          onClose={() => { 
+            setShowInterstitial(false); 
+            if(pendingAdPage) { 
+              setCurrentPage(pendingAdPage); 
+              window.scrollTo(0,0); 
+            }
+            if (interstitialCallback) {
+              interstitialCallback();
+              setInterstitialCallback(null);
+            }
+          }} 
+        />
+      )}
+      
+      {showRewarded && (
+        <RewardedAd 
+          onReward={() => { setShowRewarded(false); rewardCallback?.(); }} 
+          onClose={() => setShowRewarded(false)} 
+        />
+      )}
+    </div>
+  );
+};
+
+export default App;

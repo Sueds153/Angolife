@@ -1,0 +1,15 @@
+@layer base {
+  body {
+    @apply antialiased;
+  }
+}
+
+/* Fallback for global styles if tailwind is not enough */
+:root {
+  --brand-gold: #f59e0b;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
